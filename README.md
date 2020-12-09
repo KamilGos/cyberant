@@ -9,7 +9,7 @@
 Robot swarm for puck collection	
 
 ## Technologies
-* Python 3.4.3 //
+* Python 3.4.3 
 * Simulation: pygame
 
 ## That is what other thinks what we do
