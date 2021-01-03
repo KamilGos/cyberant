@@ -2,13 +2,35 @@ from collections import defaultdict, deque
 from heapq import *
 
 
-class PathFinder():
-    def __init__(self):
-        print("ok")
-        self.edges = None
+class PathFinder:
+    def __init__(self, mapSize):
+        self.mapSize = mapSize
+        self.edgeLength = 1
+        self.edges = self.generateEdges()
 
-    def loadEdges(self, egdes):
-        self.edges = edges
+    def generateEdges(self):
+        print("Loaded map size: ", self.mapSize)
+        edges = []
+        for x in range(self.mapSize[0]):
+            for y in range(self.mapSize[1]):
+                # up = x, y+1
+                if y + 1 <= self.mapSize[1] - 1:
+                    edges.append((str([x, y]), str([x, y + 1]), 1))
+                # down
+                if y - 1 >= 0:
+                    edges.append((str([x, y]), str([x, y - 1]), 1))
+                # left
+                if x - 1 >= 0:
+                    edges.append((str([x, y]), str([x - 1, y]), 1))
+                # right
+                if x + 1 <= self.mapSize[0] - 1:
+                    edges.append((str([x, y]), str([x + 1, y]), 1))
+        return edges
+
+    def showEdges(self):
+        print("Available Edges:")
+        for edge in self.edges:
+            print(edge)
 
     def dijkstra(self, f, t):
         g = defaultdict(list)
@@ -21,7 +43,8 @@ class PathFinder():
             if v1 not in seen:
                 seen.add(v1)
                 path += (v1,)
-                if v1 == t: return (deque(path))
+                if v1 == t:
+                    return deque(path)
 
                 for c, v2 in g.get(v1, ()):
                     if v2 in seen: continue
@@ -30,26 +53,13 @@ class PathFinder():
                     if prev is None or next < prev:
                         mins[v2] = next
                         heappush(q, (next, v2, path))
-
         return float("inf")
 
 
 if __name__ == "__main__":
-    edges = [
-        ("A", "B", 7),
-        ("A", "D", 5),
-        ("B", "C", 8),
-        ("B", "D", 9),
-        ("B", "E", 7),
-        ("C", "E", 5),
-        ("D", "E", 15),
-        ("D", "F", 6),
-        ("E", "F", 8),
-        ("E", "G", 9),
-        ("F", "G", 11)
-    ]
+    mapSize = [3, 3]
+    PF = PathFinder(mapSize)
+    PF.showEdges()
 
-    PF = PathFinder()
-    PF.loadEdges(edges)
-    print(PF.dijkstra("A", "F"))
-
+    path = PF.dijkstra("[0, 0]", "[2, 2]")
+    print(path)
