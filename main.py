@@ -23,6 +23,6 @@ if __name__ == "__main__":
         pucks=Controller.retPucks())
     Map.showGrid()
 
-    print("Test dystansu: ", Controller.calculateDistance(Controller.robots[0].retPosition(), Controller.pucks[0].retPosition()))
-    id, dys = Controller.returnShortestPathRobotId(Controller.pucks[0].retPosition())
-    print("Test najblizszego robota: id: {}, dys: {}".format(id, dys))
+    print("Test dystansu: ", len(Controller.generatePath(start_pos=Controller.robots[0].retPosition(), stop_pos=Controller.pucks[0].retPosition())))
+    id, dys, path = Controller.returnShortestPathToPuck(puck_pos=Controller.pucks[0].retPosition())
+    print("Test najblizszego robota: id: {}, dys: {}, path: {}".format(id, dys, path))

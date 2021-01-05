@@ -1,12 +1,5 @@
 import numpy as np
-import re
 from tabulate import tabulate
-
-def stringListToList(slist):
-    retlist = []
-    for elem in slist:
-        retlist.append([int(re.search('\[(.*),', elem).group(1)), int(re.search(',(.*)\]', elem).group(1))])
-    return retlist
 
 
 class Map:

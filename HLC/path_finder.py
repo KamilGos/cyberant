@@ -1,6 +1,8 @@
 from collections import defaultdict, deque
 from heapq import *
 import logging
+import re
+
 
 LOG_FORMAT = ('%(levelname) -10s %(asctime)s %(name) -30s %(funcName) '
               '-35s %(lineno) -5d: %(message)s')
@@ -34,6 +36,13 @@ class PathFinder:
         LOG.info("edges generated")
         return edges
 
+    @staticmethod
+    def stringListToList(slist):
+        retlist = []
+        for elem in slist:
+            retlist.append([int(re.search('\[(.*),', elem).group(1)), int(re.search(',(.*)\]', elem).group(1))])
+        return retlist
+
     def showEdges(self):
         print("Available Edges:")
         for edge in self.edges:
@@ -51,7 +60,7 @@ class PathFinder:
                 seen.add(v1)
                 path += (v1,)
                 if v1 == t:
-                    return deque(path)
+                    return self.stringListToList(list(path))
 
                 for c, v2 in g.get(v1, ()):
                     if v2 in seen: continue

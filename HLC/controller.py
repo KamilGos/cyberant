@@ -30,25 +30,30 @@ class Controller(PathFinder, Robot, Puck):
     def retPucks(self):
         return self.pucks
 
-    def returnPosAsString(self, pos):
+    @staticmethod
+    def returnPosAsString(pos):
         return '[' + str(pos[0]) + ', ' + str(pos[1]) + ']'
-
-    def calculateDistance(self, robot_pos, puck_pos):
-        return len(PathFinder.dijkstra(self, self.returnPosAsString(robot_pos), self.returnPosAsString(puck_pos)))
-
-    def returnShortestPathRobotId(self, puck_pos):
-        s_distance = (self.gridSize[0] * self.gridSize[1]) ** 2
-        robot_id = None
-        for robot in self.robots:
-            if robot.retCurrentState() == RobotState.Idling:
-                distance = self.calculateDistance(robot.retPosition(), puck_pos)
-                if distance < s_distance:
-                    s_distance = distance
-                    robot_id = robot.retId()
-        if robot_id is None:
-            return None, None
-        else:
-            return robot_id, s_distance
 
     def generatePath(self, start_pos, stop_pos):
         return PathFinder.dijkstra(self, self.returnPosAsString(start_pos), self.returnPosAsString(stop_pos))
+
+    def returnShortestPathToPuck(self, puck_pos):
+        s_distance = (self.gridSize[0] * self.gridSize[1]) ** 2
+        robot_id = None
+        s_path = None
+        for robot in self.robots:
+            if robot.retCurrentState() == RobotState.Idling:
+                path = self.generatePath(robot.retPosition(), puck_pos)
+                distance = len(path)
+                if distance < s_distance:
+                    s_distance = distance
+                    s_path = path
+                    robot_id = robot.retId()
+        if robot_id is None:
+            return None, None, None
+        else:
+            return robot_id, s_distance, s_path
+
+    def assignRobotToPuck(self, robotId, puckId):
+        self.robots[robotId].setStateCarrying(puckId=puckId)
+        self.pucks[puckId].setStateCarrying(robotId=robotId)

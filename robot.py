@@ -38,8 +38,8 @@ class Robot:
     def setStateIdling(self):
         self.state = RobotState.Idling
 
-    def setStateMoving(self):
-        self.state = RobotState.Moving
+    # def setStateMoving(self):
+    #     self.state = RobotState.Moving
 
     def setStateCarrying(self, puckId):
         self.state = RobotState.Carrying
