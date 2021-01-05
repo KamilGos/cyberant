@@ -1,5 +1,11 @@
 from collections import defaultdict, deque
 from heapq import *
+import logging
+
+LOG_FORMAT = ('%(levelname) -10s %(asctime)s %(name) -30s %(funcName) '
+              '-35s %(lineno) -5d: %(message)s')
+logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
+LOG = logging.getLogger(__name__)
 
 
 class PathFinder:
@@ -8,8 +14,8 @@ class PathFinder:
         self.edgeLength = 1
         self.edges = self.generateEdges()
 
+
     def generateEdges(self):
-        print("Loaded map size: ", self.mapSize)
         edges = []
         for x in range(self.mapSize[0]):
             for y in range(self.mapSize[1]):
@@ -25,6 +31,7 @@ class PathFinder:
                 # right
                 if x + 1 <= self.mapSize[0] - 1:
                     edges.append((str([x, y]), str([x + 1, y]), 1))
+        LOG.info("edges generated")
         return edges
 
     def showEdges(self):
