@@ -29,6 +29,9 @@ class Map:
             reservedRobotInit.append([self.gridSize[0] - 1 - 1, x])
         return reservedRobotRet, reservedRobotInit
 
+    def getGridSize(self):
+        return self.gridSize
+
     def showReservedPlaces(self):
         print("Robots initial places: ", self.reservedRobotInit)
         print("Robots return path: ", self.reservedRobotRet)
@@ -36,23 +39,23 @@ class Map:
     def showGrid(self):
         print(tabulate(self.grid, showindex=False, tablefmt='pretty'))
 
-    def updateGrid(self, robotsPossDict, pucksPossDict):
-        print("map gen")
-        robotsPossitions = stringListToList(list(robotsPossDict.values()))
+    def updateGrid(self, robots, pucks):
         for place in self.reservedRobotRet:
-            if place not in robotsPossitions:
-                self.grid[place[0], place[1]] = 'x'
-        iter = 0
-        for place in self.reservedRobotInit:
-            if place not in robotsPossitions:
-                self.grid[place[0], place[1]] = 'I'+str(iter)
-            iter = iter + 1
-        for robot in robotsPossDict.items():
-            poss = stringListToList([robot[1]])
-            self.grid[poss[0][0], poss[0][1]] = 'R'+str(robot[0])
-        for puck in pucksPossDict.items():
-            poss = stringListToList([puck[1]])
-            self.grid[poss[0][0], poss[0][1]] = 'P' + str(puck[0])
+            self.grid[place[0], place[1]] = 'x'
+        for iter, place in enumerate(self.reservedRobotInit):
+            self.grid[place[0], place[1]] = 'I'+str(iter)
+
+        for robot in robots:
+            robot_id = robot.retId()
+            robot_pos = robot.retPosition()
+            self.grid[robot_pos[0], robot_pos[1]] = 'R'+str(robot_id)
+
+        for puck in pucks:
+            puck_id = puck.retId()
+            puck_pos = puck.retPosition()
+            self.grid[puck_pos[0], puck_pos[1]] = 'P'+str(puck_id)
+
+
 
 
 if __name__ == "__main__":
@@ -61,8 +64,8 @@ if __name__ == "__main__":
     Map.showReservedPlaces()
     Map.showGrid()
 
-    robotsPossDict = {1: '[0, 0]', 2: '[3, 0]'}
-    pucksPossDict = {1: '[2, 2]'}
+    robotsPossDict = {1: [0, 0], 2: [3, 0]}
+    pucksPossDict = {1: [2, 2]}
 
     Map.updateGrid(robotsPossDict, pucksPossDict)
     Map.showGrid()
