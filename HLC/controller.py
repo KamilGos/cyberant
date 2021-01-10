@@ -2,6 +2,7 @@ from HLC.path_finder import PathFinder
 from robot import Robot, RobotState
 from puck import Puck, PuckState
 import enum
+import numpy as np
 
 
 class Controller(PathFinder, Robot, Puck):
@@ -10,6 +11,7 @@ class Controller(PathFinder, Robot, Puck):
         self.gridSize = gridSize
         self.robots = []
         self.pucks = []
+        self.allocMatrix = np.zeros(self.gridSize, dtype=object)
 
     def calculateRobotInitialPosition(self, robotId):
         if robotId > self.gridSize[1] - 1:
@@ -57,3 +59,4 @@ class Controller(PathFinder, Robot, Puck):
     def assignRobotToPuck(self, robotId, puckId):
         self.robots[robotId].setStateCarrying(puckId=puckId)
         self.pucks[puckId].setStateCarrying(robotId=robotId)
+

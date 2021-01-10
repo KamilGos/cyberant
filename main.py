@@ -14,7 +14,7 @@ if __name__ == "__main__":
     Map.showGrid()
 
     Controller = controller.Controller(gridSize=Map.getGridSize())
-    Controller.addRobot(robotId=0)
+    Controller.addRobot(robotId=0) 
     Controller.addRobot(robotId=1)
     Controller.addPuck(puckId=0, init_pos=[1, 2])
 
