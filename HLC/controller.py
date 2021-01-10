@@ -3,6 +3,11 @@ from robot import Robot, RobotState
 from puck import Puck, PuckState
 import enum
 import numpy as np
+import logging
+
+LOG_FORMAT = '%(levelname)-10s %(name)-20s %(funcName)-20s  %(message)s'
+logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
+LOG = logging.getLogger(__name__)
 
 
 class Controller(PathFinder, Robot, Puck):
@@ -11,7 +16,8 @@ class Controller(PathFinder, Robot, Puck):
         self.gridSize = gridSize
         self.robots = []
         self.pucks = []
-        self.allocMatrix = np.zeros(self.gridSize, dtype=object)
+        self.allocMatrix = np.zeros(self.gridSize)
+        self.allocMatrix.fill(-1)
 
     def calculateRobotInitialPosition(self, robotId):
         if robotId > self.gridSize[1] - 1:
@@ -39,24 +45,137 @@ class Controller(PathFinder, Robot, Puck):
     def generatePath(self, start_pos, stop_pos):
         return PathFinder.dijkstra(self, self.returnPosAsString(start_pos), self.returnPosAsString(stop_pos))
 
-    def returnShortestPathToPuck(self, puck_pos):
+    def DetermineNearestRobot(self, robots_ids, puck_id):
         s_distance = (self.gridSize[0] * self.gridSize[1]) ** 2
-        robot_id = None
-        s_path = None
+        s_robot_id = None
+
+        for rob_id in robots_ids:
+            path = self.generatePath(self.robots[rob_id].retPosition(), self.pucks[puck_id].retPosition())
+            distance = len(path)
+            if distance < s_distance:
+                s_distance = distance
+                s_robot_id = rob_id
+
+        return s_robot_id, s_distance
+
+    def assignRobotToPuck(self, robot_id, puck_id):
+        self.robots[robot_id].setStateMoving(puck_id=puck_id)
+        self.robots[robot_id].mission.setPuck(puck_id=puck_id)
+        self.pucks[puck_id].setStateCarrying(robot_id=robot_id)
+        LOG.info("Assigned Puck " + str(puck_id) + " to Robot " + str(robot_id))
+
+    def checkIdlingRobots(self):
+        idling_robots = []
         for robot in self.robots:
             if robot.retCurrentState() == RobotState.Idling:
-                path = self.generatePath(robot.retPosition(), puck_pos)
-                distance = len(path)
-                if distance < s_distance:
-                    s_distance = distance
-                    s_path = path
-                    robot_id = robot.retId()
-        if robot_id is None:
-            return None, None, None
+                idling_robots.append(robot.retId())
+        if len(idling_robots) > 0:
+            return True, idling_robots
         else:
-            return robot_id, s_distance, s_path
+            return False, None
 
-    def assignRobotToPuck(self, robotId, puckId):
-        self.robots[robotId].setStateCarrying(puckId=puckId)
-        self.pucks[puckId].setStateCarrying(robotId=robotId)
+    def checkIdlingPucks(self):
+        idling_pucks = []
+        for puck in self.pucks:
+            if puck.retCurrentState() == PuckState.Idling:
+                idling_pucks.append(puck.retId())
+        if len(idling_pucks) > 0:
+            return True, idling_pucks
+        else:
+            return False, None
+
+    def determinePathRobotPuck(self, robot_id, puck_id):
+        path = self.generatePath(start_pos=self.robots[robot_id].retPosition(),
+                                 stop_pos=self.pucks[puck_id].retPosition())
+        return path[1:len(path)]
+
+    def determinePathPuckContainer(self, puck_id, container_pos):
+        path = self.generatePath(start_pos=self.pucks[puck_id].retPosition(),
+                                 stop_pos=container_pos)
+        return path[1:len(path)]
+
+    def determinePathRobotReturn(self, robot_id, container_pos):
+        path = [[container_pos[0] + 1, container_pos[1]],
+                [container_pos[0] + 2, container_pos[1]]]  # add under-conteiner place two places
+        for i in range(1, (container_pos[1] - robot_id) + 1):  # add last row path
+            path.append([container_pos[0] + 2, container_pos[1] - i])
+        path.append(self.robots[robot_id].retInitPos())  # add robot init possition
+        return path
+
+    def generateRobotMissionPath(self, robot_id, puck_id, container_pos):
+        robot_puck_path = self.determinePathRobotPuck(robot_id=robot_id, puck_id=puck_id)
+        puck_cont_path = self.determinePathPuckContainer(puck_id=puck_id, container_pos=container_pos)
+        robot_return_path = self.determinePathRobotReturn(robot_id=robot_id, container_pos=container_pos)
+        full_path = []
+        full_path.extend(robot_puck_path)
+        full_path.append('pick')
+        full_path.extend(puck_cont_path)
+        full_path.append('drop')
+        full_path.extend(robot_return_path)
+        return full_path
+
+    def setRobotMission(self, robot_id, puck_id, path):
+        LOG.info("Robot " + str(robot_id) + " mission set as: " + str(path))
+        self.robots[robot_id].mission.setPuck(puck_id=puck_id)
+        self.robots[robot_id].mission.setStateReaching()
+        self.robots[robot_id].mission.setPath(path=path)
+        self.robots[robot_id].mission.resetCounter()
+        self.pucks[puck_id].setStateAssigned(robot_id=robot_id)
+
+    def showAllocationMatrix(self):
+        print(self.allocMatrix)
+
+    # def updateAllocMatrix(self, robot_id, ):
+
+    def updateAllocationMatrix(self):
+        '''
+        Update situation after one time step
+        '''
+        for robot in self.robots:
+            if robot.retCurrentState() != RobotState.Idling: # robot has active mission
+                LOG.info("Robot " + str(robot.retId()) + " has an active mission")
+
+                '''
+                alokacja miejsca
+                '''
+                # 1. alokacja pozycji robota - jest tam wiec musi miec zajętą
+                robot_pos = robot.retPosition()
+                self.allocMatrix[robot_pos[0], robot_pos[1]] = robot.retId()
+                LOG.info("Robot " + str(robot.retId()) + " alloc " + str(robot_pos) + " (pos)")
+
+                # 2. usunięcie poprzedniej pozycji jesli była zajęta czyli jesli robot wykonał już jakiś krok
+                if robot.mission.retCounter() > 0:
+                    previous_step = robot.mission.retPath()[robot.mission.retCounter()-1]
+                    self.allocMatrix[previous_step[0], previous_step[1]] = -1
+                    LOG.info("Robot " + str(robot.retId()) + " release " + str(previous_step))
+
+                # 3. alokacja miejsca na kolejny krok jeśli miejsce jest wolne
+                # oznacza to tez ze robot na pewno wykona kolejny krok
+                next_step = robot.mission.retPath()[robot.mission.retCounter()]
+                if next_step != 'pick' and next_step != 'drop':
+                    if self.allocMatrix[next_step[0], next_step[1]] == -1:
+                        self.allocMatrix[next_step[0], next_step[1]] = robot.retId()  # reserve field for next step
+                        LOG.info("Robot " + str(robot.retId()) + " alloc " + str(next_step))
+                    else:  # robot stoi w miejscu
+                        LOG.info("Robot " + str(robot.retId()) + " stay")
+
+                elif next_step == 'pick':
+                    robot.mission.setStateCarrying()
+                    self.pucks[robot.mission.retPuckId()].setStateCarrying(robot_id=robot.retId())
+                    LOG.info("Robot " + str(robot.retId()) + " picked up puck " + robot.mission.retPuckId())
+
+                elif next_step == 'drop':
+                    robot.mission.setStateReturning()
+                    self.pucks[robot.mission.retPuckId()].setStateDelivered()
+                    LOG.info("Robot " + str(robot.retId()) + " delivered puck " + robot.mission.retPuckId() + ' to container')
+
+    # def executeOneStep(self):
+
+
+
+
+
+
+
+
 
