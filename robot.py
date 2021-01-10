@@ -1,8 +1,7 @@
 import enum
 import logging
 
-LOG_FORMAT = ('%(levelname) -10s %(asctime)s %(name) -30s %(funcName) '
-              '-35s %(lineno) -5d: %(message)s')
+LOG_FORMAT = '%(levelname)-10s %(name)-20s %(funcName)-20s  %(message)s'
 logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
 LOG = logging.getLogger(__name__)
 
@@ -10,21 +9,77 @@ LOG = logging.getLogger(__name__)
 class RobotState(enum.Enum):
     Idling = 1
     Moving = 2
-    Carrying = 3
-    Returning = 4
+
+
+class RobotMissionState(enum.Enum):
+    Reaching = 1
+    Carrying = 2
+    Returning = 3
+
+
+class Mission:
+    def __init__(self):
+        self.mission_state = None
+        self.path = None
+        self.counter = 0
+        self.puck = None
+
+    def setStateReaching(self):
+        self.mission_state = RobotMissionState.Reaching
+
+    def setStateCarrying(self):
+        self.mission_state = RobotMissionState.Carrying
+
+    def setStateReturning(self):
+        self.mission_state = RobotMissionState.Returning
+
+    def setPath(self, path):
+        self.path = path
+
+    def retState(self):
+        return self.mission_state
+
+    def retPath(self):
+        return self.path
+
+    def incrementCounter(self):
+        self.counter = self.counter + 1
+
+    def resetCounter(self):
+        self.counter = 0
+
+    def retCounter(self):
+        return self.counter
+
+    def disableMission(self):
+        self.mission_state = None
+        self.path = None
+        self.counter = 0
+
+    def setPuck(self, puck_id):
+        self.puck = puck_id
+
+    def retPuckId(self):
+        return self.puck
+
+    def resetPuck(self):
+        self.puck = None
 
 
 class Robot:
     def __init__(self, robotId, init_pos):
         self.id = robotId
         self.position = init_pos
+        self.initPos = init_pos
         self.state = RobotState.Idling
-        self.mission = None
-        self.puckId = None
+        self.mission = Mission()
         LOG.info("Added robot with ID: {} on position {}".format(self.id, self.position))
 
     def retId(self):
         return self.id
+
+    def retInitPos(self):
+        return self.initPos
 
     def setMission(self, new):
         self.mission = new
@@ -38,12 +93,8 @@ class Robot:
     def setStateIdling(self):
         self.state = RobotState.Idling
 
-    # def setStateMoving(self):
-    #     self.state = RobotState.Moving
-
-    def setStateCarrying(self, puckId):
-        self.state = RobotState.Carrying
-        self.puckId = puckId
+    def setStateMoving(self, puck_id):
+        self.state = RobotState.Moving
 
     def retCurrentState(self):
         return self.state
@@ -52,11 +103,7 @@ class Robot:
         if self.state == RobotState.Idling:
             print("Robot {} in state: Idling".format(self.id))
         elif self.state == RobotState.Moving:
-            print("Robot {} in state: Moving".format(self.id))
-        elif self.state == RobotState.Returning:
-            print("Robot {} in state: Returning".format(self.id))
-        elif self.state == RobotState.Carrying:
-            print("Robot {} in state: Carrying puck with id: {}".format(self.id, self.puckId))
+            print("Robot {} in state: Moving. Mission puck id: {} ".format(self.id, self.mission.retPuckId()))
 
 
 if __name__ == "__main__":
@@ -64,5 +111,5 @@ if __name__ == "__main__":
     print(robot1.retCurrentState())
     print(robot1.retId())
     print(robot1.retPosition())
-    robot1.setStateCarrying(puckId=1)
+    robot1.setStateMoving(puck_id=0)
     robot1.showCurrentState()

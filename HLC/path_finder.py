@@ -3,19 +3,16 @@ from heapq import *
 import logging
 import re
 
-
-LOG_FORMAT = ('%(levelname) -10s %(asctime)s %(name) -30s %(funcName) '
-              '-35s %(lineno) -5d: %(message)s')
+LOG_FORMAT = '%(levelname)-10s %(name)-20s %(funcName)-20s  %(message)s'
 logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
 LOG = logging.getLogger(__name__)
 
 
 class PathFinder:
-    def __init__(self, mapSize):
-        self.mapSize = mapSize
+    def __init__(self, _mapSize):
+        self.mapSize = _mapSize
         self.edgeLength = 1
         self.edges = self.generateEdges()
-
 
     def generateEdges(self):
         edges = []

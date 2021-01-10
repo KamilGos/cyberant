@@ -1,16 +1,16 @@
 import enum
 import logging
 
-
-LOG_FORMAT = ('%(levelname) -10s %(asctime)s %(name) -30s %(funcName) '
-              '-35s %(lineno) -5d: %(message)s')
+LOG_FORMAT = '%(levelname)-10s %(name)-20s %(funcName)-20s  %(message)s'
 logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
 LOG = logging.getLogger(__name__)
 
 
 class PuckState(enum.Enum):
     Idling = 1
-    Carrying = 2
+    Assigned = 2
+    Carrying = 3
+    Delivered = 4
 
 
 class Puck:
@@ -30,9 +30,16 @@ class Puck:
     def setStateIdling(self):
         self.state = PuckState.Idling
 
-    def setStateCarrying(self, robotId):
+    def setStateAssigned(self, robot_id):
+        self.state = PuckState.Assigned
+        self.robotId = robot_id
+
+    def setStateCarrying(self, robot_id):
         self.state = PuckState.Carrying
-        self.robotId = robotId
+        self.robotId = robot_id
+
+    def setStateDelivered(self):
+        self.state = PuckState.Delivered
 
     def retCurrentState(self):
         return self.state
