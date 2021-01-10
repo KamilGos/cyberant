@@ -4,6 +4,7 @@ from matplotlib import pyplot as plt
 from matplotlib import colors
 from matplotlib import patches
 
+
 class Map:
     def __init__(self, size):
         self.gridSize = size
@@ -40,21 +41,39 @@ class Map:
     def showGrid(self):
         print(tabulate(self.grid, showindex=False, tablefmt='pretty'))
 
-    def updateGrid(self, robots, pucks):
+    def updateGrid(self, robots, pucks, container):
+        self.grid = np.zeros(self.gridSize, dtype=object)
+
         for place in self.reservedRobotRet:
             self.grid[place[0], place[1]] = 'x'
         for iter, place in enumerate(self.reservedRobotInit):
             self.grid[place[0], place[1]] = 'I' + str(iter)
 
-        for robot in robots:
-            robot_id = robot.retId()
-            robot_pos = robot.retPosition()
-            self.grid[robot_pos[0], robot_pos[1]] = 'R' + str(robot_id)
-
         for puck in pucks:
             puck_id = puck.retId()
             puck_pos = puck.retPosition()
             self.grid[puck_pos[0], puck_pos[1]] = 'P' + str(puck_id)
+
+        if len(container) > 0:
+            cont_puck = ""
+            for puck_id in container:
+                cont_puck = cont_puck + "P" + str(puck_id)
+            self.grid[self.containerPos[0], self.containerPos[1]] = cont_puck
+        else:
+            self.grid[self.containerPos[0], self.containerPos[1]] = 'C'
+
+        for robot in robots:
+            if robot.checkIfRobotCarrying():
+                robot_id = robot.retId()
+                robot_pos = robot.retPosition()
+                puck_id = robot.mission.retPuckId()
+                self.grid[robot_pos[0], robot_pos[1]] = 'R' + str(robot_id) + 'P' + str(puck_id)
+            else:
+                robot_id = robot.retId()
+                robot_pos = robot.retPosition()
+                self.grid[robot_pos[0], robot_pos[1]] = 'R' + str(robot_id)
+
+
 
     def retGridForFigure(self, robots, pucks):
         fg_grid = np.zeros(self.gridSize)

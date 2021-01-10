@@ -10,31 +10,35 @@ LOG_FORMAT = '%(levelname)-10s %(name)-20s %(funcName)-20s  %(message)s'
 logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
 LOG = logging.getLogger(__name__)
 
+PLOT_FIGURE = False
+
 if __name__ == "__main__":
     Map = environment.Map(size=[6, 4])
 
     Controller = controller.Controller(gridSize=Map.retGridSize())
 
     Controller.addRobot(robotId=0)
-    # Controller.addRobot(robotId=1)
+    Controller.addRobot(robotId=1)
 
     Controller.addPuck(puckId=0, init_pos=[1, 2])
-    # Controller.addPuck(puckId=1, init_pos=[1, 0])
+    Controller.addPuck(puckId=1, init_pos=[1, 3])
 
     print("... Initial map ...")
     Map.updateGrid(
         robots=Controller.retRobots(),
-        pucks=Controller.retPucks())
+        pucks=Controller.retPucks(),
+        container=Controller.retContainerContent())
     Map.showGrid()
 
-    # Map.createFigure()
-    # Map.updateFigure(Map.retGridForFigure(
-    #     robots=Controller.retRobots(),
-    #     pucks=Controller.retPucks()))
+    if PLOT_FIGURE:
+        Map.createFigure()
+        Map.updateFigure(Map.retGridForFigure(
+            robots=Controller.retRobots(),
+            pucks=Controller.retPucks()))
 
     # while True:
         # try:
-    for i in range(5):  # debug
+    for i in range(100):  # debug
         print("STEP: ", i)
 
         idling_pucks, idling_pucks_ids = Controller.checkIdlingPucks()
@@ -52,12 +56,12 @@ if __name__ == "__main__":
         '''
         przypisywanie
         '''
-        # jeśli istnieją czekające pucki i istnieja wolne roboty
+        # jeśli istnieją czekające pucki i istnieją wolne roboty
         if (idling_pucks is True) and (idling_robots is True):
-            for puck_id in idling_pucks_ids: # dla kazdego pucka
-                if idling_robots is True: # jesli nadal istnieje czekajacy robot
-                    robot_id, distance = Controller.DetermineNearestRobot(robots_ids=idling_pucks_ids,
-                                                                        puck_id=puck_id) # znajdz najblizszego robota
+            for puck_id in idling_pucks_ids:  # dla kazdego pucka
+                if idling_robots is True:  # jesli nadal istnieje czekajacy robot
+                    robot_id, distance = Controller.DetermineNearestRobot(robots_ids=idling_robots_ids,
+                                                                        puck_id=puck_id)  # znajdz najblizszego robota
                     Controller.assignRobotToPuck(robot_id=robot_id, puck_id=puck_id)
                     '''
                     wyznaczanie sciezki robot-puck
@@ -71,16 +75,28 @@ if __name__ == "__main__":
         '''
         wykonywanie kroku
         '''
-        Controller.updateOneStep()
+        Controller.updateAllocationMatrix()
         Controller.showAllocationMatrix()
 
+        inp = input("Do step...")
 
-        # Map.updateGrid(
-        #     robots=Controller.retRobots(),
-        #     pucks=Controller.retPucks())
-        # Map.showGrid()
+        Controller.executeOneStep()
+
+        Map.updateGrid(
+            robots=Controller.retRobots(),
+            pucks=Controller.retPucks(),
+            container=Controller.retContainerContent())
+
+        Map.showGrid()
+
+        if PLOT_FIGURE:
+            Map.updateFigure(Map.retGridForFigure(
+                robots=Controller.retRobots(),
+                pucks=Controller.retPucks()))
+
         time.sleep(1)
         print("-"*50)
+        inp = input("Next loop...")
 
 
 
