@@ -18,6 +18,13 @@ class Controller(PathFinder, Robot, Puck):
         self.pucks = []
         self.allocMatrix = np.zeros(self.gridSize)
         self.allocMatrix.fill(-1)
+        self.containerContent = []
+
+    def addPuckToContainer(self, puck_id):
+        self.containerContent.append(puck_id)
+
+    def retContainerContent(self):
+        return self.containerContent
 
     def calculateRobotInitialPosition(self, robotId):
         if robotId > self.gridSize[1] - 1:
@@ -128,48 +135,93 @@ class Controller(PathFinder, Robot, Puck):
     # def updateAllocMatrix(self, robot_id, ):
 
     def updateAllocationMatrix(self):
-        '''
-        Update situation after one time step
-        '''
         for robot in self.robots:
             if robot.retCurrentState() != RobotState.Idling: # robot has active mission
                 LOG.info("Robot " + str(robot.retId()) + " has an active mission")
 
-                '''
-                alokacja miejsca
-                '''
-                # 1. alokacja pozycji robota - jest tam wiec musi miec zajętą
+                # 1. usunięcie poprzedniej pozycji jesli była zajęta czyli jesli robot wykonał już jakiś krok
+                if robot.mission.retCounter() == 1:
+                    previous_step = robot.retInitPos()
+                    self.allocMatrix[previous_step[0], previous_step[1]] = -1
+                    LOG.info("Robot " + str(robot.retId()) + " release " + str(previous_step) + " (init)")
+                elif robot.mission.retCounter() > 1:
+                    previous_step = robot.mission.retPath()[robot.mission.retCounter() - 2]
+                    if (previous_step == 'pick') or (previous_step == 'drop'):
+                        previous_step = robot.mission.retPath()[robot.mission.retCounter() - 3]
+                    self.allocMatrix[previous_step[0], previous_step[1]] = -1
+                    LOG.info("Robot " + str(robot.retId()) + " release " + str(previous_step))
+
+                # 2. alokacja aktualnej pozycji robota - jest tam wiec musi miec zajętą
                 robot_pos = robot.retPosition()
                 self.allocMatrix[robot_pos[0], robot_pos[1]] = robot.retId()
                 LOG.info("Robot " + str(robot.retId()) + " alloc " + str(robot_pos) + " (pos)")
 
-                # 2. usunięcie poprzedniej pozycji jesli była zajęta czyli jesli robot wykonał już jakiś krok
-                if robot.mission.retCounter() > 0:
-                    previous_step = robot.mission.retPath()[robot.mission.retCounter()-1]
-                    self.allocMatrix[previous_step[0], previous_step[1]] = -1
-                    LOG.info("Robot " + str(robot.retId()) + " release " + str(previous_step))
-
                 # 3. alokacja miejsca na kolejny krok jeśli miejsce jest wolne
                 # oznacza to tez ze robot na pewno wykona kolejny krok
-                next_step = robot.mission.retPath()[robot.mission.retCounter()]
-                if next_step != 'pick' and next_step != 'drop':
-                    if self.allocMatrix[next_step[0], next_step[1]] == -1:
-                        self.allocMatrix[next_step[0], next_step[1]] = robot.retId()  # reserve field for next step
-                        LOG.info("Robot " + str(robot.retId()) + " alloc " + str(next_step))
-                    else:  # robot stoi w miejscu
-                        LOG.info("Robot " + str(robot.retId()) + " stay")
+                if robot.mission.retCounter() < len(robot.mission.retPath()):
+                    next_step = robot.mission.retPath()[robot.mission.retCounter()]
+                    if next_step != 'pick' and next_step != 'drop':
+                        if self.allocMatrix[next_step[0], next_step[1]] == -1:
+                            self.allocMatrix[next_step[0], next_step[1]] = robot.retId()  # reserve field for next step
+                            LOG.info("Robot " + str(robot.retId()) + " alloc " + str(next_step) + " (next)")
+                        else:  # robot stoi w miejscu
+                            LOG.info("Robot " + str(robot.retId()) + " couldn't alloc " + str(next_step))
 
-                elif next_step == 'pick':
+                # 4. robot zakończył misję. Wyczyszczenie misji oraz robot w stan idling
+                else:
+                    robot.mission.disableMission()
+                    robot.setStateIdling()
+                    LOG.info("Robot " + str(robot.retId()) + " finished mission...")
+
+    def executeOneStep(self):
+        # jeśli kolejne pole nalezy do robota to może on wykonac ruch
+
+        for robot in self.robots:
+            if robot.retCurrentState() != RobotState.Idling:  # robot has active mission
+                next_step = robot.mission.retPath()[robot.mission.retCounter()]
+
+                # 1. jeśli kolejny krok to zabranie pucka
+                if next_step == 'pick':
                     robot.mission.setStateCarrying()
                     self.pucks[robot.mission.retPuckId()].setStateCarrying(robot_id=robot.retId())
-                    LOG.info("Robot " + str(robot.retId()) + " picked up puck " + robot.mission.retPuckId())
+                    robot.mission.incrementCounter()
+                    LOG.info("Robot " + str(robot.retId()) + " increment counter to " + str(robot.mission.retCounter()))
+                    LOG.info("Robot " + str(robot.retId()) + " picked up puck " + str(robot.mission.retPuckId()))
 
+                # 2. jeśli kolejny krok to odłożenie pucka do kontenera
                 elif next_step == 'drop':
                     robot.mission.setStateReturning()
                     self.pucks[robot.mission.retPuckId()].setStateDelivered()
-                    LOG.info("Robot " + str(robot.retId()) + " delivered puck " + robot.mission.retPuckId() + ' to container')
+                    self.addPuckToContainer(puck_id=robot.mission.retPuckId())
+                    robot.mission.incrementCounter()
+                    LOG.info("Robot " + str(robot.retId()) + " increment counter to " + str(robot.mission.retCounter()))
+                    LOG.info("Robot " + str(robot.retId()) + " delivered puck " + str(robot.mission.retPuckId()) +
+                             ' to container')
 
-    # def executeOneStep(self):
+                # 3. jeśli kolejny krok to ruch
+                if next_step != 'pick' and next_step != 'drop':
+                    # jeśli kolejne pole nalezy do robota to moze się ruszyć
+                    if self.allocMatrix[next_step[0], next_step[1]] == robot.retId():
+                        robot.updatePosition(new=next_step)
+                        # jesli robot ma pucka to aktualizuj pozycję pucka
+                        if robot.checkIfRobotCarrying() is True:
+                            self.pucks[robot.mission.retPuckId()].updatePosition(new=next_step)
+                            LOG.info("Robot " + str(robot.retId()) + " and puck " + str(robot.mission.retPuckId()) +
+                                     " moved to " + str(robot.retPosition()))
+                        else:
+                            LOG.info("Robot " + str(robot.retId()) + " moved to " + str(robot.retPosition()))
+                        robot.mission.incrementCounter()
+                        LOG.info("Robot " + str(robot.retId()) + " increment counter to " +
+                                 str(robot.mission.retCounter()))
+
+
+                    else:  # robot stoi w miejscu
+                        LOG.info("Robot " + str(robot.retId()) + " stay on " + str(robot.retPosition()) +
+                                 ". Field " + str(next_step) + " is allocated for robot " +
+                                 str(int(self.allocMatrix[next_step[0], next_step[1]])))
+
+
+
 
 
 

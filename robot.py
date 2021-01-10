@@ -105,6 +105,9 @@ class Robot:
         elif self.state == RobotState.Moving:
             print("Robot {} in state: Moving. Mission puck id: {} ".format(self.id, self.mission.retPuckId()))
 
+    def checkIfRobotCarrying(self):
+        return self.mission.retState() == RobotMissionState.Carrying
+
 
 if __name__ == "__main__":
     robot1 = Robot(robotId=1, init_pos=1)
