@@ -1,9 +1,11 @@
 import enum
 import logging
+from main import LOGGER_DISABLED
 
 LOG_FORMAT = '%(levelname)-10s %(name)-20s %(funcName)-20s  %(message)s'
 logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
 LOG = logging.getLogger(__name__)
+LOG.disabled = LOGGER_DISABLED
 
 
 class PuckState(enum.Enum):
@@ -53,6 +55,11 @@ class Puck:
     def retId(self):
         return self.id
 
+    def checkIfIdling(self):
+        return self.state == PuckState.Idling
+
+    def checkIfAssigned(self):
+        return self.state == PuckState.Assigned
 
 if __name__ == "__main__":
     puck1 = Puck( puckId=1, init_pos=[0, 1])

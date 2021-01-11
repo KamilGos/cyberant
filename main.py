@@ -1,46 +1,96 @@
 import HLC.controller as controller
 import environment
-import puck
-import robot
 import logging
 import time
-import traceback
+from random import randint
 
 LOG_FORMAT = '%(levelname)-10s %(name)-20s %(funcName)-20s  %(message)s'
 logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
 LOG = logging.getLogger(__name__)
 
-PLOT_FIGURE = False
+LOGGER_DISABLED = False
+LOG.disabled = LOGGER_DISABLED
+
+PLOT_FIGURE = True
+PRINT_CONSOLE_GRID = True
+
+AUTO_GENERATE = False
+STEP_BY_STEP = False
+# SIMULATION_TIME = 0.1  # sec per step
+SIMULATION_TIME = 'MAX'
+ROBOTS_NUM = 7
+PUCKS_NUM = 30
+
 
 if __name__ == "__main__":
-    Map = environment.Map(size=[6, 4])
+#    Map = environment.Map(size=[10, 8])
+    Map = environment.Map(size=[10, 8])  # for debug with AUTO_GENERATE = False !
 
     Controller = controller.Controller(gridSize=Map.retGridSize())
 
-    Controller.addRobot(robotId=0)
-    Controller.addRobot(robotId=1)
+    if AUTO_GENERATE:
+        for id in range(ROBOTS_NUM):
+            Controller.addRobot(robotId=id)
+            # time.sleep(0.1)
 
-    Controller.addPuck(puckId=0, init_pos=[1, 2])
-    Controller.addPuck(puckId=1, init_pos=[1, 3])
+        for id in range(PUCKS_NUM):
+            while True:
+                rand_pos = [randint(0, Map.retGridSize()[0] - 3), randint(1, Map.retGridSize()[1]) - 1]
+                if not Controller.checkIfPuckIsOnPosition(rand_pos) and rand_pos != Map.retContainerPos():
+                    break
+            Controller.addPuck(puckId=id, init_pos=rand_pos)
+            # time.sleep(0.1)
+    else:
+        for i in range(7):
+            Controller.addRobot(robotId=i)
 
-    print("... Initial map ...")
-    Map.updateGrid(
-        robots=Controller.retRobots(),
-        pucks=Controller.retPucks(),
-        container=Controller.retContainerContent())
-    Map.showGrid()
+        Controller.addPuck(puckId=0, init_pos=[3, 3])
+        Controller.addPuck(puckId=1, init_pos=[0, 7])
+        Controller.addPuck(puckId=2, init_pos=[6, 2])
+        Controller.addPuck(puckId=3, init_pos=[6, 1])
+        Controller.addPuck(puckId=4, init_pos=[7, 1])
+        Controller.addPuck(puckId=5, init_pos=[3, 5])
+        Controller.addPuck(puckId=6, init_pos=[4, 6])
+        Controller.addPuck(puckId=7, init_pos=[6, 7])
+        Controller.addPuck(puckId=8, init_pos=[6, 4])
+        Controller.addPuck(puckId=9, init_pos=[1, 7])
+        Controller.addPuck(puckId=10, init_pos=[1, 6])
+        Controller.addPuck(puckId=11, init_pos=[0, 2])
+        Controller.addPuck(puckId=12, init_pos=[7, 2])
+        Controller.addPuck(puckId=13, init_pos=[5, 2])
+        Controller.addPuck(puckId=14, init_pos=[5, 1])
+        Controller.addPuck(puckId=15, init_pos=[6, 0])
+        Controller.addPuck(puckId=16, init_pos=[1, 0])
+        Controller.addPuck(puckId=17, init_pos=[1, 3])
+        Controller.addPuck(puckId=18, init_pos=[4, 0])
+        Controller.addPuck(puckId=19, init_pos=[7, 5])
+        Controller.addPuck(puckId=20, init_pos=[1, 1])
+        Controller.addPuck(puckId=21, init_pos=[4, 4])
+        Controller.addPuck(puckId=22, init_pos=[2, 2])
+        Controller.addPuck(puckId=23, init_pos=[0, 3])
+        Controller.addPuck(puckId=24, init_pos=[5, 7])
+        Controller.addPuck(puckId=25, init_pos=[1, 5])
+        Controller.addPuck(puckId=26, init_pos=[3, 1])
+        Controller.addPuck(puckId=27, init_pos=[3, 2])
+        Controller.addPuck(puckId=28, init_pos=[4, 2])
+        Controller.addPuck(puckId=29, init_pos=[0, 6])
+
+    if PRINT_CONSOLE_GRID:
+        print("... Initial map ...")
+        Map.updateGrid(
+            robots=Controller.retRobots(),
+            pucks=Controller.retPucks(),
+            container=Controller.retContainerContent())
+        Map.showGrid()
 
     if PLOT_FIGURE:
-        Map.createFigure()
-        Map.updateFigure(Map.retGridForFigure(
+        Map.createGridWorldWindow()
+        Map.updategridWorld(
             robots=Controller.retRobots(),
-            pucks=Controller.retPucks()))
+            pucks=Controller.retPucks(),
+            container=Controller.retContainerContent())
 
-    # while True:
-        # try:
-    for i in range(100):  # debug
-        print("STEP: ", i)
-
+    while True:
         idling_pucks, idling_pucks_ids = Controller.checkIdlingPucks()
         if idling_pucks is True:
             LOG.info("Idling Pucks ids:" + str(idling_pucks_ids))
@@ -76,31 +126,27 @@ if __name__ == "__main__":
         wykonywanie kroku
         '''
         Controller.updateAllocationMatrix()
-        Controller.showAllocationMatrix()
+        if PRINT_CONSOLE_GRID:
+            Controller.showAllocationMatrix()
 
-        inp = input("Do step...")
+        if STEP_BY_STEP:
+            inp = input("Press to do step...")
+        elif SIMULATION_TIME != 'MAX':
+            time.sleep(SIMULATION_TIME)
 
         Controller.executeOneStep()
 
-        Map.updateGrid(
-            robots=Controller.retRobots(),
-            pucks=Controller.retPucks(),
-            container=Controller.retContainerContent())
-
-        Map.showGrid()
+        if PRINT_CONSOLE_GRID:
+            Map.updateGrid(
+                robots=Controller.retRobots(),
+                pucks=Controller.retPucks(),
+                container=Controller.retContainerContent())
+            Map.showGrid()
 
         if PLOT_FIGURE:
-            Map.updateFigure(Map.retGridForFigure(
+            Map.updategridWorld(
                 robots=Controller.retRobots(),
-                pucks=Controller.retPucks()))
-
-        time.sleep(1)
-        print("-"*50)
-        inp = input("Next loop...")
-
-
-
-        # except Exception as ex:
-        #     mss = traceback.format_tb()
-        #     LOG.error("WHILE LOOP ERROR: Exception: " + str(ex))
-        #     exit()
+                pucks=Controller.retPucks(),
+                container=Controller.retContainerContent())
+        if PRINT_CONSOLE_GRID:
+            print("-" * 50)

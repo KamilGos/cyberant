@@ -4,10 +4,12 @@ from puck import Puck, PuckState
 import enum
 import numpy as np
 import logging
+from main import LOGGER_DISABLED
 
 LOG_FORMAT = '%(levelname)-10s %(name)-20s %(funcName)-20s  %(message)s'
 logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
 LOG = logging.getLogger(__name__)
+LOG.disabled = LOGGER_DISABLED
 
 
 class Controller(PathFinder, Robot, Puck):
@@ -44,6 +46,12 @@ class Controller(PathFinder, Robot, Puck):
 
     def retPucks(self):
         return self.pucks
+
+    def checkIfPuckIsOnPosition(self, pos):
+        for puck in self.pucks:
+            if puck.retPosition() == pos:
+                return True
+        return False
 
     @staticmethod
     def returnPosAsString(pos):
@@ -140,16 +148,17 @@ class Controller(PathFinder, Robot, Puck):
                 LOG.info("Robot " + str(robot.retId()) + " has an active mission")
 
                 # 1. usunięcie poprzedniej pozycji jesli była zajęta czyli jesli robot wykonał już jakiś krok
-                if robot.mission.retCounter() == 1:
+                if robot.mission.retCounter() == 1:  # usuniecie pozycji poczatkowej
                     previous_step = robot.retInitPos()
                     self.allocMatrix[previous_step[0], previous_step[1]] = -1
                     LOG.info("Robot " + str(robot.retId()) + " release " + str(previous_step) + " (init)")
-                elif robot.mission.retCounter() > 1:
+                elif robot.mission.retCounter() > 1:  # kazdej kolejnej ze ścieżki
                     previous_step = robot.mission.retPath()[robot.mission.retCounter() - 2]
                     if (previous_step == 'pick') or (previous_step == 'drop'):
                         previous_step = robot.mission.retPath()[robot.mission.retCounter() - 3]
-                    self.allocMatrix[previous_step[0], previous_step[1]] = -1
-                    LOG.info("Robot " + str(robot.retId()) + " release " + str(previous_step))
+                    if self.allocMatrix[previous_step[0], previous_step[1]] == robot.retId(): # jeśli wcześniej jej nie usunął
+                        self.allocMatrix[previous_step[0], previous_step[1]] = -1
+                        LOG.info("Robot " + str(robot.retId()) + " release " + str(previous_step))
 
                 # 2. alokacja aktualnej pozycji robota - jest tam wiec musi miec zajętą
                 robot_pos = robot.retPosition()
@@ -214,12 +223,15 @@ class Controller(PathFinder, Robot, Puck):
                         LOG.info("Robot " + str(robot.retId()) + " increment counter to " +
                                  str(robot.mission.retCounter()))
 
-
                     else:  # robot stoi w miejscu
-                        LOG.info("Robot " + str(robot.retId()) + " stay on " + str(robot.retPosition()) +
-                                 ". Field " + str(next_step) + " is allocated for robot " +
-                                 str(int(self.allocMatrix[next_step[0], next_step[1]])))
-
+                        if int(self.allocMatrix[next_step[0], next_step[1]]) != -1:
+                            LOG.info("Robot " + str(robot.retId()) + " stay on " + str(robot.retPosition()) +
+                                     ". Field " + str(next_step) + " is allocated for robot " +
+                                     str(int(self.allocMatrix[next_step[0], next_step[1]])))
+                        else:
+                            LOG.info("Robot " + str(robot.retId()) + " stay on " + str(robot.retPosition()) +
+                                     ". Field " + str(next_step) +
+                                     " was allocated for some robot and can be use in next step")
 
 
 
