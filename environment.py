@@ -3,7 +3,9 @@ from tabulate import tabulate
 from matplotlib import pyplot as plt
 from matplotlib import colors
 from matplotlib import patches
+import logging
 
+logging.getLogger('matplotlib.font_manager').disabled = True
 
 class Map:
     def __init__(self, size):
@@ -75,49 +77,115 @@ class Map:
 
 
 
-    def retGridForFigure(self, robots, pucks):
-        fg_grid = np.zeros(self.gridSize)
-        fg_grid[self.containerPos[0], self.containerPos[1]] = 1
+    def createCoordinates(self, x, y):
+        coord = [[y, self.gridSize[0] - x],
+                 [y + 1, self.gridSize[0] - x],
+                 [y + 1, self.gridSize[0] - x - 1],
+                 [y, self.gridSize[0] - x - 1],
+                 [y, self.gridSize[0] - x]]
+        return zip(*coord)
 
+    # translate coordinates - vertical flip
+    def trCoords(self, y, x):
+        return [x, self.gridSize[0]-y]
+
+    def optSize(self, text):
+        size = int((46 - 3*len(text))/(self.gridSize[0]*0.2))
+        if size < 1:
+            size = 1
+        return size
+
+    def createGridWorldWindow(self):
+        gridWorldFig = plt.figure(figsize=(10, 10))
+        plt.ion()
+        plt.show()
+
+    def drawGrid(self):
+        # draw outline rectangle
+        plt.clf()
+
+        coord = [[0, 0], [self.gridSize[1], 0], [self.gridSize[1], self.gridSize[0]], [0, self.gridSize[0]], [0, 0]]
+        xs, ys = zip(*coord)
+        plt.plot(xs, ys, "black")
+
+        # draw grid
+        X, Y = np.meshgrid(range(self.gridSize[1] + 1), range(self.gridSize[0] + 1))
+        plt.plot(X, Y, 'k-')
+        plt.plot(X.transpose(), Y.transpose(), 'k-')
+
+        # draw robot return path reserved fields
         for place in self.reservedRobotRet:
-            fg_grid[place[0], place[1]] = 2
+            xs, ys = self.createCoordinates(place[0], place[1])
+            plt.fill(xs, ys, "gray", alpha=0.3)
+            plt.plot(xs, ys, "black")
+
+        # draw robot initial fields
         for iter, place in enumerate(self.reservedRobotInit):
-            fg_grid[place[0], place[1]] = 3
+            xs, ys = self.createCoordinates(place[0], place[1])
+            plt.fill(xs, ys, "green", alpha=0.3)
+            plt.plot(xs, ys, "black")
+            plt.text(self.trCoords(place[0], place[1])[0] + 0.5, self.trCoords(place[0], place[1])[1] - 0.5, "I" +
+                     str(iter), fontsize=self.optSize(str(iter)), horizontalalignment='center', verticalalignment='center',
+                     color='black', alpha=0.1, family='monospace')
+
+    def updategridWorld(self, robots, pucks, container):
+        self.drawGrid()
+        for puck in pucks:
+            if puck.checkIfIdling() or puck.checkIfAssigned():
+                puck_id = puck.retId()
+                puck_pos = puck.retPosition()
+                xs, ys = self.createCoordinates(puck_pos[0], puck_pos[1])
+                plt.fill(xs, ys, "red", alpha=0.6)
+                plt.plot(xs, ys, "black")
+                plt.text(self.trCoords(puck_pos[0], puck_pos[1])[0] + 0.5, self.trCoords(puck_pos[0], puck_pos[1])[1] - 0.5,
+                         "P" + str(puck_id), fontsize=self.optSize( "P" + str(puck_id)), horizontalalignment='center', verticalalignment='center',
+                         color='black', alpha=1, family='DejaVu Sans')
+
+        if len(container) > 0:
+            cont_puck = ""
+            for puck_id in container:
+                cont_puck = cont_puck + "P" + str(puck_id)
+            xs, ys = self.createCoordinates(self.containerPos[0], self.containerPos[1])
+            plt.fill(xs, ys, "red", alpha=0.6)
+            plt.plot(xs, ys, "black")
+            plt.text(self.trCoords(self.containerPos[0], self.containerPos[1])[0] + 0.5,
+                     self.trCoords(self.containerPos[0], self.containerPos[1])[1] - 0.5,
+                     'C:'+cont_puck, fontsize=self.optSize('C:'+cont_puck), horizontalalignment='center', verticalalignment='center',
+                     color='black', alpha=1, family='DejaVu Sans')
+        else:
+            xs, ys = self.createCoordinates(self.containerPos[0], self.containerPos[1])
+            plt.fill(xs, ys, "blue", alpha=0.3)
+            plt.plot(xs, ys, "black")
+            plt.text(self.trCoords(self.containerPos[0], self.containerPos[1])[0] + 0.5,
+                     self.trCoords(self.containerPos[0], self.containerPos[1])[1] - 0.5,
+                     'CONTAINER', fontsize=self.optSize('CONTAINER'), horizontalalignment='center', verticalalignment='center',
+                     color='black', alpha=1, family='DejaVu Sans')
 
         for robot in robots:
-            robot_id = robot.retId()
-            robot_pos = robot.retPosition()
-            fg_grid[robot_pos[0], robot_pos[1]] = 4
-
-        for puck in pucks:
-            puck_id = puck.retId()
-            puck_pos = puck.retPosition()
-            fg_grid[puck_pos[0], puck_pos[1]] = 5
-        return fg_grid
-
-    @staticmethod
-    def updateFigure(grid):
-        # 0 - nothing
-        # 1 - container
-        # 2 - robot ret
-        # 3 - robot init
-        # 4 - robots
-        # 5  - pucks
-        cols = colors.ListedColormap(['w', 'g', 'tab:gray', 'tab:orange', 'red', 'k'])
-        plt.imshow(grid, cmap=cols)
-        plt.pause(0.05)
-
-
-    def createFigure(self):
-        plt.figure(figsize=self.gridSize)
-        plt.legend(loc=(1.4, 1))
-        plt.legend(handles=[patches.Patch(color='w', label='nothing'),
-                            patches.Patch(color='g', label='container'),
-                            patches.Patch(color='tab:gray', label='return'),
-                            patches.Patch(color='tab:orange', label='init'),
-                            patches.Patch(color='red', label='robots'),
-                            patches.Patch(color='k', label='pucks')])
-
+            if robot.checkIfRobotCarrying():
+                robot_id = robot.retId()
+                robot_pos = robot.retPosition()
+                puck_id = robot.mission.retPuckId()
+                xs, ys = self.createCoordinates(robot_pos[0], robot_pos[1])
+                plt.fill(xs, ys, "green", alpha=0.8)
+                plt.plot(xs, ys, "black")
+                plt.text(self.trCoords(robot_pos[0], robot_pos[1])[0] + 0.5,
+                         self.trCoords(robot_pos[0], robot_pos[1])[1] - 0.5,
+                         'R' + str(robot_id) + 'P' + str(puck_id), fontsize=self.optSize( 'R' + str(robot_id) + 'P' + str(puck_id)), horizontalalignment='center', verticalalignment='center',
+                         color='black', alpha=1, family='DejaVu Sans')
+            else:
+                robot_id = robot.retId()
+                robot_pos = robot.retPosition()
+                xs, ys = self.createCoordinates(robot_pos[0], robot_pos[1])
+                plt.fill(xs, ys, "green", alpha=0.8)
+                plt.plot(xs, ys, "black")
+                plt.text(self.trCoords(robot_pos[0], robot_pos[1])[0] + 0.5,
+                         self.trCoords(robot_pos[0], robot_pos[1])[1] - 0.5,
+                         'R' + str(robot_id), fontsize=self.optSize( 'R' + str(robot_id)), horizontalalignment='center',
+                         verticalalignment='center',
+                         color='black', alpha=1, family='DejaVu Sans')
+        plt.draw()
+        plt.pause(0.001)
 
 
 if __name__ == "__main__":

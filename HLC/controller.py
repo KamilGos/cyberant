@@ -4,10 +4,12 @@ from puck import Puck, PuckState
 import enum
 import numpy as np
 import logging
+from main import LOGGER_DISABLED
 
 LOG_FORMAT = '%(levelname)-10s %(name)-20s %(funcName)-20s  %(message)s'
 logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
 LOG = logging.getLogger(__name__)
+LOG.disabled = LOGGER_DISABLED
 
 
 class Controller(PathFinder, Robot, Puck):
@@ -44,6 +46,12 @@ class Controller(PathFinder, Robot, Puck):
 
     def retPucks(self):
         return self.pucks
+
+    def checkIfPuckIsOnPosition(self, pos):
+        for puck in self.pucks:
+            if puck.retPosition() == pos:
+                return True
+        return False
 
     @staticmethod
     def returnPosAsString(pos):
@@ -213,7 +221,6 @@ class Controller(PathFinder, Robot, Puck):
                         robot.mission.incrementCounter()
                         LOG.info("Robot " + str(robot.retId()) + " increment counter to " +
                                  str(robot.mission.retCounter()))
-
 
                     else:  # robot stoi w miejscu
                         LOG.info("Robot " + str(robot.retId()) + " stay on " + str(robot.retPosition()) +

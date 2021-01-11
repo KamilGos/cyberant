@@ -2,10 +2,12 @@ from collections import defaultdict, deque
 from heapq import *
 import logging
 import re
+from main import LOGGER_DISABLED
 
 LOG_FORMAT = '%(levelname)-10s %(name)-20s %(funcName)-20s  %(message)s'
 logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
 LOG = logging.getLogger(__name__)
+LOG.disabled = LOGGER_DISABLED
 
 
 class PathFinder:
