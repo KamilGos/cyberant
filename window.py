@@ -34,7 +34,7 @@ SIMULATION_TIME = 'MAX'
 ROBOTS_NUM = 7
 PUCKS_NUM = 30
 
-
+#test
 
 class MplCanvas(FigureCanvasQTAgg):
 
