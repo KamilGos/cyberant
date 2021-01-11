@@ -17,6 +17,7 @@ class Map:
         self.grid[self.containerPos[0], self.containerPos[1]] = 'C'
         self.reservedRobotRet, self.reservedRobotInit = self.retReservedPos()
         self.maxRobots = len(self.reservedRobotInit)
+        self.gridWorldFig = plt.figure(figsize=(10, 10))
 
     def retContainerPos(self):
         return self.containerPos
@@ -97,7 +98,7 @@ class Map:
         return size
 
     def createGridWorldWindow(self):
-        gridWorldFig = plt.figure(figsize=(10, 10))
+        # self.gridWorldFig = plt.figure(figsize=(10, 10))
         plt.ion()
         plt.show()
 

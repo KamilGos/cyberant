@@ -1,4 +1,5 @@
-import HLC.controller as controller
+# import HLC.HLC.controller as HLC.controller
+import HLC.controller
 import environment
 import logging
 import time
@@ -26,7 +27,7 @@ if __name__ == "__main__":
 #    Map = environment.Map(size=[10, 8])
     Map = environment.Map(size=[10, 8])  # for debug with AUTO_GENERATE = False !
 
-    Controller = controller.Controller(gridSize=Map.retGridSize())
+    Controller = HLC.controller.Controller(gridSize=Map.retGridSize())
 
     if AUTO_GENERATE:
         for id in range(ROBOTS_NUM):
