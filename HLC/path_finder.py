@@ -2,12 +2,12 @@ from collections import defaultdict, deque
 from heapq import *
 import logging
 import re
-from main import LOGGER_DISABLED
+# from main import LOGGER_DISABLED
 
 LOG_FORMAT = '%(levelname)-10s %(name)-20s %(funcName)-20s  %(message)s'
 logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
 LOG = logging.getLogger(__name__)
-LOG.disabled = LOGGER_DISABLED
+# LOG.disabled = LOGGER_DISABLED
 
 
 class PathFinder:
@@ -47,6 +47,15 @@ class PathFinder:
         for edge in self.edges:
             print(edge)
 
+    def removeEdge(self, remove_coord):
+        new_edges = []
+        for edge in self.edges:
+            if (edge[0] != str(remove_coord)) & (edge[1] != str(remove_coord)):
+                new_edges.append(edge)
+            else:
+                print("Removed edge: ", edge)
+        return new_edges
+
     def dijkstra(self, f, t):
         g = defaultdict(list)
         for l, r, c in self.edges:
@@ -75,6 +84,8 @@ if __name__ == "__main__":
     mapSize = [3, 3]
     PF = PathFinder(mapSize)
     PF.showEdges()
+
+    PF.removeEdge([1, 0])
 
     path = PF.dijkstra("[0, 0]", "[2, 2]")
     print(path)

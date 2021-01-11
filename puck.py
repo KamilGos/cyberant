@@ -7,6 +7,7 @@ logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
 LOG = logging.getLogger(__name__)
 LOG.disabled = LOGGER_DISABLED
 
+
 class PuckState(enum.Enum):
     Idling = 1
     Assigned = 2
