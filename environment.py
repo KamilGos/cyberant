@@ -7,6 +7,7 @@ import logging
 
 logging.getLogger('matplotlib.font_manager').disabled = True
 
+
 class Map:
     def __init__(self, size):
         self.gridSize = size
