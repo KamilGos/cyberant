@@ -18,6 +18,8 @@ class Map:
         self.reservedRobotRet, self.reservedRobotInit = self.retReservedPos()
         self.maxRobots = len(self.reservedRobotInit)
         self.gridWorldFig = plt.figure(figsize=(10, 10))
+        plt.ion()
+        plt.draw()
 
     def retContainerPos(self):
         return self.containerPos
@@ -101,7 +103,7 @@ class Map:
         # self.gridWorldFig = plt.figure(figsize=(10, 10))
         plt.ion()
         plt.draw()
-        # plt.show()
+        plt.show()
 
     def drawGrid(self):
         # draw outline rectangle

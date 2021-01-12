@@ -9,6 +9,7 @@
 import random
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtCore import pyqtSignal
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 import HLC.controller
@@ -38,9 +39,11 @@ PUCKS_NUM = 30
 # test
 
 class MplCanvas(FigureCanvasQTAgg):
+    new_puck_in_container = pyqtSignal(int)
     def __init__(self, parent=None, width=5, height=4, dpi=100):
-        # fig = Figure(figsize=(width, height), dpi=dpi)
-        # self.axes = fig.add_subplot(111)
+        fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = fig.add_subplot(111)
+        
         self.animation_running = False
         self.Map = environment.Map(size=[10, 8])  # for debug with AUTO_GENERATE = False !
         super(MplCanvas, self).__init__(self.Map.gridWorldFig)
@@ -110,6 +113,7 @@ class MplCanvas(FigureCanvasQTAgg):
 
     def run_animation(self):
         while True:
+            self.new_puck_in_container.emit(len(self.Controller.containerContent))
             if self.animation_running == False:
                 break
             else:
@@ -227,6 +231,7 @@ class Ui_MainWindow(object):
         self.robotsNumber.setObjectName("robotsNumber")
         self.horizontalLayout_3.addWidget(self.robotsNumber)
         self.pucksNumber = QtWidgets.QLCDNumber(self.centralwidget)
+        self.pucksNumber.setProperty("value", 10.0)
         self.pucksNumber.setObjectName("pucksNumber")
         self.horizontalLayout_3.addWidget(self.pucksNumber)
         self.RightLayout.addLayout(self.horizontalLayout_3)
@@ -250,6 +255,21 @@ class Ui_MainWindow(object):
         self.RightLayout.addWidget(self.startButton)
         spacerItem1 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
         self.RightLayout.addItem(spacerItem1)
+        self.progressBar = QtWidgets.QProgressBar(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.progressBar.sizePolicy().hasHeightForWidth())
+        self.progressBar.setSizePolicy(sizePolicy)
+        self.progressBar.setProperty("value", 0)
+        self.progressBar.setObjectName("progressBar")
+        self.progressBar.setStyleSheet("#BlueProgressBar {\n"
+                                       "    border: 2px solid #2196F3;\n"
+                                       "    border-radius: 5px;\n"
+                                       "    background-color: #E0E0E0;\n"
+                                       "    color:blue;\n"                                       
+                                       "}")
+        self.RightLayout.addWidget(self.progressBar)
         self.horizontalLayout.addLayout(self.RightLayout)
         self.horizontalLayout_2.addLayout(self.horizontalLayout)
         MainWindow.setCentralWidget(self.centralwidget)
@@ -262,11 +282,13 @@ class Ui_MainWindow(object):
         MainWindow.setStatusBar(self.statusbar)
 
         ########## END ##########
+
         self.startButton.setStyleSheet("background-color: green")
         self.leftLayout.addWidget(self.sc)
         self.startButton.clicked.connect(self.start_clicked)
         self.exitButton.clicked.connect(lambda: self.close())
         self.addPuckButton.clicked.connect(self.add_puck)
+        self.sc.new_puck_in_container.connect(self.update_progress)
         self.pucksNumber.setProperty("value",len(self.sc.Controller.pucks))
         self.robotsNumber.setProperty("value",ROBOTS_NUM)
         self.retranslateUi(MainWindow)
@@ -280,7 +302,8 @@ class Ui_MainWindow(object):
         self.pucksNumberLabel.setText(_translate("MainWindow", "Number of pucks:"))
         self.addPuckButton.setText(_translate("MainWindow", "Add random puck"))
         self.startButton.setText(_translate("MainWindow", "start/stop"))
-
+    def update_progress(self,number_of_pucks):
+        self.progressBar.setValue(number_of_pucks)
     def add_puck(self):
         while True:
             print("searching")
