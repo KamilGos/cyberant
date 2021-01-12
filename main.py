@@ -1,4 +1,4 @@
-import HLC.controller as controller
+import HLC.controller
 import environment
 import logging
 import time
@@ -18,15 +18,15 @@ AUTO_GENERATE = True
 STEP_BY_STEP = False
 # SIMULATION_TIME = 0.1  # sec per step
 SIMULATION_TIME = 'MAX'
-ROBOTS_NUM = 7
-PUCKS_NUM = 30
+ROBOTS_NUM = 17
+PUCKS_NUM = 60
 
 
 if __name__ == "__main__":
 #    Map = environment.Map(size=[10, 8])
-    Map = environment.Map(size=[10, 8])  # for debug with AUTO_GENERATE = False !
+    Map = environment.Map(size=[20, 18])  # for debug with AUTO_GENERATE = False !
 
-    Controller = controller.Controller(gridSize=Map.retGridSize())
+    Controller = HLC.controller.Controller(gridSize=Map.retGridSize())
 
     if AUTO_GENERATE:
         for id in range(ROBOTS_NUM):
@@ -111,8 +111,8 @@ if __name__ == "__main__":
             for puck_id in idling_pucks_ids:  # dla kazdego pucka
                 if idling_robots is True:  # jesli nadal istnieje czekajacy robot
                     robot_id, distance = Controller.DetermineNearestRobot(robots_ids=idling_robots_ids,
-                                                                        puck_id=puck_id)  # znajdz najblizszego robota
-                    Controller.assignRobotToPuck(robot_id=robot_id, puck_id=puck_id)
+                                                                          puck_id=puck_id)  # znajdz najblizszego robota
+                    Controller.assignRobotToPuck(robot_id=robot_id, puck_id=puck_id) # naprawic
                     '''
                     wyznaczanie sciezki robot-puck
                     '''
