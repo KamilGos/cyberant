@@ -41,7 +41,7 @@ class MplCanvas(FigureCanvasQTAgg):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         # fig = Figure(figsize=(width, height), dpi=dpi)
         # self.axes = fig.add_subplot(111)
-
+        self.animation_running = False
         self.Map = environment.Map(size=[10, 8])  # for debug with AUTO_GENERATE = False !
         super(MplCanvas, self).__init__(self.Map.gridWorldFig)
         self.Controller = HLC.controller.Controller(gridSize=self.Map.retGridSize())
@@ -92,7 +92,7 @@ class MplCanvas(FigureCanvasQTAgg):
             self.Controller.addPuck(puckId=27, init_pos=[3, 2])
             self.Controller.addPuck(puckId=28, init_pos=[4, 2])
             self.Controller.addPuck(puckId=29, init_pos=[0, 6])
-    def run_animation(self):
+
             if PRINT_CONSOLE_GRID:
                 print("... Initial map ...")
                 self.Map.updateGrid(
@@ -107,70 +107,72 @@ class MplCanvas(FigureCanvasQTAgg):
                     robots=self.Controller.retRobots(),
                     pucks=self.Controller.retPucks(),
                     container=self.Controller.retContainerContent())
-            self.i=0
+
+    def run_animation(self):
             while True:
-            # while self.i in range(1):
-            #     self.i+=1
-                idling_pucks, idling_pucks_ids = self.Controller.checkIdlingPucks()
-                if idling_pucks is True:
-                    LOG.info("Idling Pucks ids:" + str(idling_pucks_ids))
+                if self.animation_running == False:
+                    break
                 else:
-                    LOG.info("NO Ideling Pucks")
+                    idling_pucks, idling_pucks_ids = self.Controller.checkIdlingPucks()
+                    if idling_pucks is True:
+                        LOG.info("Idling Pucks ids:" + str(idling_pucks_ids))
+                    else:
+                        LOG.info("NO Ideling Pucks")
 
-                idling_robots, idling_robots_ids = self.Controller.checkIdlingRobots()
-                if idling_robots is True:
-                    LOG.info("Idling Robots ids: " + str(idling_robots_ids))
-                else:
-                    LOG.info("No idling robots")
+                    idling_robots, idling_robots_ids = self.Controller.checkIdlingRobots()
+                    if idling_robots is True:
+                        LOG.info("Idling Robots ids: " + str(idling_robots_ids))
+                    else:
+                        LOG.info("No idling robots")
 
-                '''
-                przypisywanie
-                '''
-                # jeśli istnieją czekające pucki i istnieją wolne roboty
-                if (idling_pucks is True) and (idling_robots is True):
-                    for puck_id in idling_pucks_ids:  # dla kazdego pucka
-                        if idling_robots is True:  # jesli nadal istnieje czekajacy robot
-                            robot_id, distance = self.Controller.DetermineNearestRobot(robots_ids=idling_robots_ids,
-                                                                                  puck_id=puck_id)  # znajdz najblizszego robota
-                            self.Controller.assignRobotToPuck(robot_id=robot_id, puck_id=puck_id)
-                            '''
-                            wyznaczanie sciezki robot-puck
-                            '''
-                            path = self.Controller.generateRobotMissionPath(robot_id=robot_id, puck_id=puck_id,
-                                                                       container_pos=self.Map.retContainerPos())
-                            self.Controller.setRobotMission(robot_id=robot_id, puck_id=puck_id, path=path)
+                    '''
+                    przypisywanie
+                    '''
+                    # jeśli istnieją czekające pucki i istnieją wolne roboty
+                    if (idling_pucks is True) and (idling_robots is True):
+                        for puck_id in idling_pucks_ids:  # dla kazdego pucka
+                            if idling_robots is True:  # jesli nadal istnieje czekajacy robot
+                                robot_id, distance = self.Controller.DetermineNearestRobot(robots_ids=idling_robots_ids,
+                                                                                      puck_id=puck_id)  # znajdz najblizszego robota
+                                self.Controller.assignRobotToPuck(robot_id=robot_id, puck_id=puck_id)
+                                '''
+                                wyznaczanie sciezki robot-puck
+                                '''
+                                path = self.Controller.generateRobotMissionPath(robot_id=robot_id, puck_id=puck_id,
+                                                                           container_pos=self.Map.retContainerPos())
+                                self.Controller.setRobotMission(robot_id=robot_id, puck_id=puck_id, path=path)
 
-                            idling_robots, idling_robots_ids = self.Controller.checkIdlingRobots()
-                            LOG.info("Left Idling Robots: " + str(idling_robots_ids))
+                                idling_robots, idling_robots_ids = self.Controller.checkIdlingRobots()
+                                LOG.info("Left Idling Robots: " + str(idling_robots_ids))
 
-                '''
-                wykonywanie kroku
-                '''
-                self.Controller.updateAllocationMatrix()
-                if PRINT_CONSOLE_GRID:
-                    self.Controller.showAllocationMatrix()
+                    '''
+                    wykonywanie kroku
+                    '''
+                    self.Controller.updateAllocationMatrix()
+                    if PRINT_CONSOLE_GRID:
+                        self.Controller.showAllocationMatrix()
 
-                if STEP_BY_STEP:
-                    inp = input("Press to do step...")
-                elif SIMULATION_TIME != 'MAX':
-                    time.sleep(SIMULATION_TIME)
+                    if STEP_BY_STEP:
+                        inp = input("Press to do step...")
+                    elif SIMULATION_TIME != 'MAX':
+                        time.sleep(SIMULATION_TIME)
 
-                self.Controller.executeOneStep()
+                    self.Controller.executeOneStep()
 
-                if PRINT_CONSOLE_GRID:
-                    self.Map.updateGrid(
-                        robots=self.Controller.retRobots(),
-                        pucks=self.Controller.retPucks(),
-                        container=self.Controller.retContainerContent())
-                    self.Map.showGrid()
+                    if PRINT_CONSOLE_GRID:
+                        self.Map.updateGrid(
+                            robots=self.Controller.retRobots(),
+                            pucks=self.Controller.retPucks(),
+                            container=self.Controller.retContainerContent())
+                        self.Map.showGrid()
 
-                if PLOT_FIGURE:
-                    self.Map.updategridWorld(
-                        robots=self.Controller.retRobots(),
-                        pucks=self.Controller.retPucks(),
-                        container=self.Controller.retContainerContent())
-                if PRINT_CONSOLE_GRID:
-                    print("-" * 50)
+                    if PLOT_FIGURE:
+                         self.Map.updategridWorld(
+                            robots=self.Controller.retRobots(),
+                            pucks=self.Controller.retPucks(),
+                            container=self.Controller.retContainerContent())
+                    if PRINT_CONSOLE_GRID:
+                        print("-" * 50)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -243,14 +245,17 @@ class Ui_MainWindow(object):
             self.startButton.setText(_translate("MainWindow","stop"))
             self.startButton.setStyleSheet("background-color: red")
             self.label.setText("animation started")
-            self.sc.run_animation()
+            self.sc.animation_running = True
+
 
         else:
             self.animation_started = False
             self.label.setText("animation stopped")
             self.startButton.setText(_translate("MainWindow","start"))
             self.startButton.setStyleSheet("background-color: green")
+            self.sc.animation_running = False
 
+        self.sc.run_animation()
         self.startButton.repaint()
 
 if __name__ == "__main__":

@@ -100,7 +100,8 @@ class Map:
     def createGridWorldWindow(self):
         # self.gridWorldFig = plt.figure(figsize=(10, 10))
         plt.ion()
-        plt.show()
+        plt.draw()
+        # plt.show()
 
     def drawGrid(self):
         # draw outline rectangle
