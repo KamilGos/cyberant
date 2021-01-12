@@ -178,7 +178,7 @@ class MplCanvas(FigureCanvasQTAgg):
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(815, 600)
+        MainWindow.resize(1405, 950)
         self.animation_started = False
         self.sc = MplCanvas()
 
@@ -200,9 +200,36 @@ class Ui_MainWindow(object):
         self.exitButton = QtWidgets.QPushButton(self.centralwidget)
         self.exitButton.setObjectName("exitButton")
         self.RightLayout.addWidget(self.exitButton)
-        self.label = QtWidgets.QLabel(self.centralwidget)
-        self.label.setObjectName("label")
-        self.RightLayout.addWidget(self.label)
+        self.horizontalLayout_4 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_4.setObjectName("horizontalLayout_4")
+        self.robotsNumberLabel = QtWidgets.QLabel(self.centralwidget)
+        font = QtGui.QFont()
+        font.setFamily("Microsoft YaHei")
+        font.setPointSize(14)
+        font.setBold(True)
+        font.setWeight(75)
+        self.robotsNumberLabel.setFont(font)
+        self.robotsNumberLabel.setObjectName("robotsNumberLabel")
+        self.horizontalLayout_4.addWidget(self.robotsNumberLabel)
+        self.pucksNumberLabel = QtWidgets.QLabel(self.centralwidget)
+        font = QtGui.QFont()
+        font.setFamily("Microsoft YaHei")
+        font.setPointSize(14)
+        font.setBold(True)
+        font.setWeight(75)
+        self.pucksNumberLabel.setFont(font)
+        self.pucksNumberLabel.setObjectName("pucksNumberLabel")
+        self.horizontalLayout_4.addWidget(self.pucksNumberLabel)
+        self.RightLayout.addLayout(self.horizontalLayout_4)
+        self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_3.setObjectName("horizontalLayout_3")
+        self.robotsNumber = QtWidgets.QLCDNumber(self.centralwidget)
+        self.robotsNumber.setObjectName("robotsNumber")
+        self.horizontalLayout_3.addWidget(self.robotsNumber)
+        self.pucksNumber = QtWidgets.QLCDNumber(self.centralwidget)
+        self.pucksNumber.setObjectName("pucksNumber")
+        self.horizontalLayout_3.addWidget(self.pucksNumber)
+        self.RightLayout.addLayout(self.horizontalLayout_3)
         self.addPuckButton = QtWidgets.QPushButton(self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
@@ -240,37 +267,39 @@ class Ui_MainWindow(object):
         self.startButton.clicked.connect(self.start_clicked)
         self.exitButton.clicked.connect(lambda: self.close())
         self.addPuckButton.clicked.connect(self.add_puck)
+        self.pucksNumber.setProperty("value",len(self.sc.Controller.pucks))
+        self.robotsNumber.setProperty("value",ROBOTS_NUM)
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.label.setText(_translate("MainWindow", "TextLabel"))
-        self.addPuckButton.setText(_translate("MainWindow", "Add Random Puck"))
         self.exitButton.setText(_translate("MainWindow", "exit app"))
-        self.startButton.setText(_translate("MainWindow", "start"))
+        self.robotsNumberLabel.setText(_translate("MainWindow", "Number of robots:"))
+        self.pucksNumberLabel.setText(_translate("MainWindow", "Number of pucks:"))
+        self.addPuckButton.setText(_translate("MainWindow", "Add random puck"))
+        self.startButton.setText(_translate("MainWindow", "start/stop"))
 
     def add_puck(self):
         while True:
             print("searching")
             y_pos = random.randint(3, 8)
-            x_pos = random.randint(1, 7)
+            x_pos = random.randint(0, 7)
             print("y: "+ str(y_pos) + " x: "+ str(x_pos))
             if not self.sc.Controller.checkIfPuckIsOnPosition([y_pos, x_pos]):
-                self.sc.Controller.addPuck(len(self.sc.Controller.pucks), init_pos=[y_pos,x_pos])
+                self.sc.Controller.addPuck(len(self.sc.Controller.pucks), init_pos=[y_pos, x_pos])
                 print("found free space")
                 break
+        self.pucksNumber.setProperty("value", len(self.sc.Controller.pucks))
 
     def start_clicked(self):
         _translate = QtCore.QCoreApplication.translate
         if self.sc.animation_running == False:
             self.startButton.setText(_translate("MainWindow", "stop"))
             self.startButton.setStyleSheet("background-color: red")
-            self.label.setText("animation started")
             self.sc.animation_running = True
         else:
-            self.label.setText("animation stopped")
             self.startButton.setText(_translate("MainWindow", "start"))
             self.startButton.setStyleSheet("background-color: green")
             self.sc.animation_running = False
