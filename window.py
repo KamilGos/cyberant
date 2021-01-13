@@ -126,8 +126,10 @@ class Algorithm():
             sys.exit(self.app.exec_())
             # self.run_animation()
         self.Window.pucksNumber.setProperty("value", len(self.Controller.retPucks()))
+
     def update_progress(self):
-        self.Window.progressBar.setValue()
+        print("updating progress bar")
+        self.Window.progressBar.setValue(len(self.Controller.retContainerContent()))
 
     def add_puck(self):
         while True:
@@ -158,9 +160,12 @@ class Algorithm():
         self.run_animation()
         self.Window.startButton.repaint()
 
-    def run_animation(self):
-        while True:
 
+
+    def run_animation(self):
+
+        while True:
+            self.update_progress()
             if self.animation_running == False:
                 break
             else:
