@@ -190,7 +190,7 @@ class Map:
                          verticalalignment='center',
                          color='black', alpha=1, family='DejaVu Sans')
         plt.draw()
-        plt.pause(0.001)
+        # plt.pause(0.001)
 
 
 if __name__ == "__main__":

@@ -10,14 +10,16 @@ import random
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import pyqtSignal
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
+from PyQt5.QtWidgets import QWidget, QApplication, QMainWindow
+from matplotlib.backends.backend_qt5agg import  NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import HLC.controller
 import environment
 import logging
 import time
 from random import randint
-
+import matplotlib.pyplot as plt
 LOG_FORMAT = '%(levelname)-10s %(name)-20s %(funcName)-20s  %(message)s'
 logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
 LOG = logging.getLogger(__name__)
@@ -38,17 +40,23 @@ PUCKS_NUM = 30
 
 # test
 
-class MplCanvas(FigureCanvasQTAgg):
-    new_puck_in_container = pyqtSignal(int)
+class Algorithm():
+
     def __init__(self, parent=None, width=5, height=4, dpi=100):
-        fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = fig.add_subplot(111)
-        
+        print("created alg")
+
         self.animation_running = False
         self.Map = environment.Map(size=[10, 8])  # for debug with AUTO_GENERATE = False !
-        super(MplCanvas, self).__init__(self.Map.gridWorldFig)
         self.Controller = HLC.controller.Controller(gridSize=self.Map.retGridSize())
-
+        self.Window = Main_Window()
+        # self.ui = Ui_MainWindow()
+        print("hello")
+        self.Window.startButton.clicked.connect(self.start_clicked)
+        # self.startButton.clicked.connect(self.start_clicked)
+        # # self.exitButton.clicked.connect(lambda: self.close())
+        # self.addPuckButton.clicked.connect(self.add_puck)
+        # self.algorithm.new_puck_in_container.connect(self.update_progress)
+        # self.pucksNumber.setProperty("value",len(self.algorithm.Controller.pucks))
         if AUTO_GENERATE:
             for id in range(ROBOTS_NUM):
                 self.Controller.addRobot(robotId=id)
@@ -96,24 +104,45 @@ class MplCanvas(FigureCanvasQTAgg):
             self.Controller.addPuck(puckId=28, init_pos=[4, 2])
             self.Controller.addPuck(puckId=29, init_pos=[0, 6])
 
-            if PRINT_CONSOLE_GRID:
-                print("... Initial map ...")
-                self.Map.updateGrid(
-                    robots=self.Controller.retRobots(),
-                    pucks=self.Controller.retPucks(),
-                    container=self.Controller.retContainerContent())
-                self.Map.showGrid()
+        if PRINT_CONSOLE_GRID:
+            print("... Initial map ...")
+            self.Map.updateGrid(
+                robots=self.Controller.retRobots(),
+                pucks=self.Controller.retPucks(),
+                container=self.Controller.retContainerContent())
+            self.Map.showGrid()
 
-            if PLOT_FIGURE:
-                self.Map.createGridWorldWindow()
-                self.Map.updategridWorld(
-                    robots=self.Controller.retRobots(),
-                    pucks=self.Controller.retPucks(),
-                    container=self.Controller.retContainerContent())
+        if PLOT_FIGURE:
+            self.Map.createGridWorldWindow()
+            self.Map.updategridWorld(
+                robots=self.Controller.retRobots(),
+                pucks=self.Controller.retPucks(),
+                container=self.Controller.retContainerContent())
+            # creating apyqt5 application
+            self.app = QApplication(sys.argv)
+            # creating a window object
+            print("before window show")
+            self.Window.show()
+            self.app.processEvents()
+            sys.exit(self.app.exec_())
+            # self.run_animation()
+
+    def start_clicked(self):
+        _translate = QtCore.QCoreApplication.translate
+        if self.animation_running == False:
+            self.Window.startButton.setText(_translate("MainWindow", "stop"))
+            self.Window.startButton.setStyleSheet("background-color: red")
+            self.animation_running = True
+        else:
+            self.Window.startButton.setText(_translate("MainWindow", "start"))
+            self.Window.startButton.setStyleSheet("background-color: green")
+            self.animation_running = False
+        self.run_animation()
+        self.Window.startButton.repaint()
 
     def run_animation(self):
         while True:
-            self.new_puck_in_container.emit(len(self.Controller.containerContent))
+
             if self.animation_running == False:
                 break
             else:
@@ -162,7 +191,6 @@ class MplCanvas(FigureCanvasQTAgg):
                     time.sleep(SIMULATION_TIME)
 
                 self.Controller.executeOneStep()
-                print("PUCKS NUMBER:     " + str(len(self.Controller.pucks)))
                 if PRINT_CONSOLE_GRID:
                     self.Map.updateGrid(
                         robots=self.Controller.retRobots(),
@@ -175,16 +203,172 @@ class MplCanvas(FigureCanvasQTAgg):
                         robots=self.Controller.retRobots(),
                         pucks=self.Controller.retPucks(),
                         container=self.Controller.retContainerContent())
+                    self.Window.plot()
+                    self.app.processEvents()
                 if PRINT_CONSOLE_GRID:
                     print("-" * 50)
 
 
+class Main_Window(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setObjectName("MainWindow")
+        self.resize(1405, 950)
+        self.animation_started = False
+
+        self.figure = plt.gcf()
+        # this is the Canvas Widget that
+        # displays the 'figure'it takes the
+        # 'figure' instance as a parameter to __init__
+        self.canvas = FigureCanvas(self.figure)
+
+        ############### FROM DESIGNER #################
+        self.centralwidget = QtWidgets.QWidget(self)
+        self.centralwidget.setObjectName("centralwidget")
+        self.horizontalLayout_2 = QtWidgets.QHBoxLayout(self.centralwidget)
+        self.horizontalLayout_2.setObjectName("horizontalLayout_2")
+        self.horizontalLayout = QtWidgets.QHBoxLayout()
+        self.horizontalLayout.setObjectName("horizontalLayout")
+        self.leftLayout = QtWidgets.QVBoxLayout()
+        self.leftLayout.setObjectName("leftLayout")
+        self.widget = QtWidgets.QWidget(self.centralwidget)
+        self.widget.setObjectName("widget")
+        self.leftLayout.addWidget(self.widget)
+        self.horizontalLayout.addLayout(self.leftLayout)
+        self.RightLayout = QtWidgets.QVBoxLayout()
+        self.RightLayout.setObjectName("RightLayout")
+        self.exitButton = QtWidgets.QPushButton(self.centralwidget)
+        self.exitButton.setObjectName("exitButton")
+        self.RightLayout.addWidget(self.exitButton)
+        self.horizontalLayout_4 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_4.setObjectName("horizontalLayout_4")
+        self.robotsNumberLabel = QtWidgets.QLabel(self.centralwidget)
+        font = QtGui.QFont()
+        font.setFamily("Microsoft YaHei")
+        font.setPointSize(14)
+        font.setBold(True)
+        font.setWeight(75)
+        self.robotsNumberLabel.setFont(font)
+        self.robotsNumberLabel.setObjectName("robotsNumberLabel")
+        self.horizontalLayout_4.addWidget(self.robotsNumberLabel)
+        self.pucksNumberLabel = QtWidgets.QLabel(self.centralwidget)
+        font = QtGui.QFont()
+        font.setFamily("Microsoft YaHei")
+        font.setPointSize(14)
+        font.setBold(True)
+        font.setWeight(75)
+        self.pucksNumberLabel.setFont(font)
+        self.pucksNumberLabel.setObjectName("pucksNumberLabel")
+        self.horizontalLayout_4.addWidget(self.pucksNumberLabel)
+        self.RightLayout.addLayout(self.horizontalLayout_4)
+        self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_3.setObjectName("horizontalLayout_3")
+        self.robotsNumber = QtWidgets.QLCDNumber(self.centralwidget)
+        self.robotsNumber.setObjectName("robotsNumber")
+        self.horizontalLayout_3.addWidget(self.robotsNumber)
+        self.pucksNumber = QtWidgets.QLCDNumber(self.centralwidget)
+        self.pucksNumber.setProperty("value", 10.0)
+        self.pucksNumber.setObjectName("pucksNumber")
+        self.horizontalLayout_3.addWidget(self.pucksNumber)
+        self.RightLayout.addLayout(self.horizontalLayout_3)
+        self.addPuckButton = QtWidgets.QPushButton(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.addPuckButton.sizePolicy().hasHeightForWidth())
+        self.addPuckButton.setSizePolicy(sizePolicy)
+        self.addPuckButton.setObjectName("addPuckButton")
+        self.RightLayout.addWidget(self.addPuckButton)
+        spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
+        self.RightLayout.addItem(spacerItem)
+        self.startButton = QtWidgets.QPushButton(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.startButton.sizePolicy().hasHeightForWidth())
+        self.startButton.setSizePolicy(sizePolicy)
+        self.startButton.setObjectName("startButton")
+        self.RightLayout.addWidget(self.startButton)
+        spacerItem1 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
+        self.RightLayout.addItem(spacerItem1)
+        self.progressBar = QtWidgets.QProgressBar(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.progressBar.sizePolicy().hasHeightForWidth())
+        self.progressBar.setSizePolicy(sizePolicy)
+        self.progressBar.setProperty("value", 0)
+        self.progressBar.setObjectName("progressBar")
+        self.progressBar.setStyleSheet("#BlueProgressBar {\n"
+                                       "    border: 2px solid #2196F3;\n"
+                                       "    border-radius: 5px;\n"
+                                       "    background-color: #E0E0E0;\n"
+                                       "    color:blue;\n"                                       
+                                       "}")
+        self.RightLayout.addWidget(self.progressBar)
+        self.horizontalLayout.addLayout(self.RightLayout)
+        self.horizontalLayout_2.addLayout(self.horizontalLayout)
+        self.setCentralWidget(self.centralwidget)
+        self.menubar = QtWidgets.QMenuBar(self)
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 815, 21))
+        self.menubar.setObjectName("menubar")
+        self.setMenuBar(self.menubar)
+        self.statusbar = QtWidgets.QStatusBar(self)
+        self.statusbar.setObjectName("statusbar")
+        self.setStatusBar(self.statusbar)
+
+        ########## END ##########
+
+        self.startButton.setStyleSheet("background-color: green")
+        self.leftLayout.addWidget(self.canvas)
+        # self.startButton.clicked.connect(self.start_clicked)
+        # # self.exitButton.clicked.connect(lambda: self.close())
+        # self.addPuckButton.clicked.connect(self.add_puck)
+        # self.algorithm.new_puck_in_container.connect(self.update_progress)
+        # self.pucksNumber.setProperty("value",len(self.algorithm.Controller.pucks))
+        self.robotsNumber.setProperty("value",ROBOTS_NUM)
+        _translate = QtCore.QCoreApplication.translate
+        self.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        self.exitButton.setText(_translate("MainWindow", "exit app"))
+        self.robotsNumberLabel.setText(_translate("MainWindow", "Number of robots:"))
+        self.pucksNumberLabel.setText(_translate("MainWindow", "Number of pucks:"))
+        self.addPuckButton.setText(_translate("MainWindow", "Add random puck"))
+        self.startButton.setText(_translate("MainWindow", "start/stop"))
+        # self.retranslateUi(MainWindow)
+    def update_progress(self,number_of_pucks):
+        self.progressBar.setValue(number_of_pucks)
+
+    def plot(self):
+            self.canvas.draw()
+
+    def add_puck(self):
+        while True:
+            print("searching")
+            y_pos = random.randint(3, 8)
+            x_pos = random.randint(0, 7)
+            print("y: "+ str(y_pos) + " x: "+ str(x_pos))
+            if not self.algorithm.Controller.checkIfPuckIsOnPosition([y_pos, x_pos]):
+                self.algorithm.Controller.addPuck(len(self.algorithm.Controller.pucks), init_pos=[y_pos, x_pos])
+                print("found free space")
+                break
+        self.pucksNumber.setProperty("value", len(self.algorithm.Controller.pucks))
+
+
+
+
 class Ui_MainWindow(object):
+    def __init__(self):
+        self.figure = plt.gcf()
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1405, 950)
         self.animation_started = False
-        self.sc = MplCanvas()
+
+
+        # this is the Canvas Widget that
+        # displays the 'figure'it takes the
+        # 'figure' instance as a parameter to __init__
+        self.canvas = FigureCanvas(self.figure)
 
         ############### FROM DESIGNER #################
         self.centralwidget = QtWidgets.QWidget(MainWindow)
@@ -284,12 +468,12 @@ class Ui_MainWindow(object):
         ########## END ##########
 
         self.startButton.setStyleSheet("background-color: green")
-        self.leftLayout.addWidget(self.sc)
-        self.startButton.clicked.connect(self.start_clicked)
-        self.exitButton.clicked.connect(lambda: self.close())
-        self.addPuckButton.clicked.connect(self.add_puck)
-        self.sc.new_puck_in_container.connect(self.update_progress)
-        self.pucksNumber.setProperty("value",len(self.sc.Controller.pucks))
+        self.leftLayout.addWidget(self.canvas)
+        # self.startButton.clicked.connect(self.start_clicked)
+        # # self.exitButton.clicked.connect(lambda: self.close())
+        # self.addPuckButton.clicked.connect(self.add_puck)
+        # self.algorithm.new_puck_in_container.connect(self.update_progress)
+        # self.pucksNumber.setProperty("value",len(self.algorithm.Controller.pucks))
         self.robotsNumber.setProperty("value",ROBOTS_NUM)
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -302,40 +486,35 @@ class Ui_MainWindow(object):
         self.pucksNumberLabel.setText(_translate("MainWindow", "Number of pucks:"))
         self.addPuckButton.setText(_translate("MainWindow", "Add random puck"))
         self.startButton.setText(_translate("MainWindow", "start/stop"))
+
     def update_progress(self,number_of_pucks):
         self.progressBar.setValue(number_of_pucks)
+
+    def plot(self):
+            self.canvas.draw()
+
     def add_puck(self):
         while True:
             print("searching")
             y_pos = random.randint(3, 8)
             x_pos = random.randint(0, 7)
             print("y: "+ str(y_pos) + " x: "+ str(x_pos))
-            if not self.sc.Controller.checkIfPuckIsOnPosition([y_pos, x_pos]):
-                self.sc.Controller.addPuck(len(self.sc.Controller.pucks), init_pos=[y_pos, x_pos])
+            if not self.algorithm.Controller.checkIfPuckIsOnPosition([y_pos, x_pos]):
+                self.algorithm.Controller.addPuck(len(self.algorithm.Controller.pucks), init_pos=[y_pos, x_pos])
                 print("found free space")
                 break
-        self.pucksNumber.setProperty("value", len(self.sc.Controller.pucks))
+        self.pucksNumber.setProperty("value", len(self.algorithm.Controller.pucks))
 
-    def start_clicked(self):
-        _translate = QtCore.QCoreApplication.translate
-        if self.sc.animation_running == False:
-            self.startButton.setText(_translate("MainWindow", "stop"))
-            self.startButton.setStyleSheet("background-color: red")
-            self.sc.animation_running = True
-        else:
-            self.startButton.setText(_translate("MainWindow", "start"))
-            self.startButton.setStyleSheet("background-color: green")
-            self.sc.animation_running = False
-        self.sc.run_animation()
-        self.startButton.repaint()
+
 
 
 if __name__ == "__main__":
     import sys
 
-    app = QtWidgets.QApplication(sys.argv)
-    MainWindow = QtWidgets.QMainWindow()
-    ui = Ui_MainWindow()
-    ui.setupUi(MainWindow)
-    MainWindow.show()
-    sys.exit(app.exec_())
+    # app = QtWidgets.QApplication(sys.argv)
+    # MainWindow = QtWidgets.QMainWindow()
+    # ui = Ui_MainWindow()
+    # ui.setupUi(MainWindow)
+    # MainWindow.show()
+    # sys.exit(app.exec_())
+    alg = Algorithm()
