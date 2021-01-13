@@ -103,7 +103,7 @@ class Map:
         # self.gridWorldFig = plt.figure(figsize=(10, 10))
         plt.ion()
         plt.draw()
-        plt.show()
+        # plt.show()
 
     def drawGrid(self):
         # draw outline rectangle
