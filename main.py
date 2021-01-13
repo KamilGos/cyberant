@@ -12,23 +12,24 @@ LOGGER_DISABLED = False
 LOG.disabled = LOGGER_DISABLED
 
 PLOT_FIGURE = True
-PRINT_CONSOLE_GRID = True
+PRINT_CONSOLE_GRID = False
 
 AUTO_GENERATE = True
 STEP_BY_STEP = False
 # SIMULATION_TIME = 0.1  # sec per step
 SIMULATION_TIME = 'MAX'
 ROBOTS_NUM = 17
-PUCKS_NUM = 60
+PUCKS_NUM = 30
 
 
 if __name__ == "__main__":
 #    Map = environment.Map(size=[10, 8])
-    Map = environment.Map(size=[20, 18])  # for debug with AUTO_GENERATE = False !
+    Map = environment.Map(size=[10, 8])  # for debug with AUTO_GENERATE = False !
 
     Controller = HLC.controller.Controller(gridSize=Map.retGridSize())
 
     if AUTO_GENERATE:
+        ROBOTS_NUM = Map.retGridSize()[1]-1
         for id in range(ROBOTS_NUM):
             Controller.addRobot(robotId=id)
             # time.sleep(0.1)
@@ -40,6 +41,7 @@ if __name__ == "__main__":
                     break
             Controller.addPuck(puckId=id, init_pos=rand_pos)
             # time.sleep(0.1)
+        Controller.returnPucksAsString()
     else:
         for i in range(7):
             Controller.addRobot(robotId=i)

@@ -142,25 +142,13 @@ class Map:
                          "P" + str(puck_id), fontsize=self.optSize( "P" + str(puck_id)), horizontalalignment='center', verticalalignment='center',
                          color='black', alpha=1, family='DejaVu Sans')
 
-        if len(container) > 0:
-            cont_puck = ""
-            for puck_id in container:
-                cont_puck = cont_puck + "P" + str(puck_id)
-            xs, ys = self.createCoordinates(self.containerPos[0], self.containerPos[1])
-            plt.fill(xs, ys, "red", alpha=0.6)
-            plt.plot(xs, ys, "black")
-            plt.text(self.trCoords(self.containerPos[0], self.containerPos[1])[0] + 0.5,
-                     self.trCoords(self.containerPos[0], self.containerPos[1])[1] - 0.5,
-                     'C:'+cont_puck, fontsize=self.optSize('C:'+cont_puck), horizontalalignment='center', verticalalignment='center',
-                     color='black', alpha=1, family='DejaVu Sans')
-        else:
-            xs, ys = self.createCoordinates(self.containerPos[0], self.containerPos[1])
-            plt.fill(xs, ys, "blue", alpha=0.3)
-            plt.plot(xs, ys, "black")
-            plt.text(self.trCoords(self.containerPos[0], self.containerPos[1])[0] + 0.5,
-                     self.trCoords(self.containerPos[0], self.containerPos[1])[1] - 0.5,
-                     'CONTAINER', fontsize=self.optSize('CONTAINER'), horizontalalignment='center', verticalalignment='center',
-                     color='black', alpha=1, family='DejaVu Sans')
+        xs, ys = self.createCoordinates(self.containerPos[0], self.containerPos[1])
+        plt.fill(xs, ys, "blue", alpha=0.3)
+        plt.plot(xs, ys, "black")
+        plt.text(self.trCoords(self.containerPos[0], self.containerPos[1])[0] + 0.5,
+                 self.trCoords(self.containerPos[0], self.containerPos[1])[1] - 0.5,
+                 str(len(container)), fontsize=self.optSize(str(len(container))), horizontalalignment='center', verticalalignment='center',
+                 color='black', alpha=1, family='DejaVu Sans')
 
         for robot in robots:
             if robot.checkIfRobotCarrying():

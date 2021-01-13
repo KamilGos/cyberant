@@ -53,6 +53,10 @@ class Controller(PathFinder, Robot, Puck):
                 return True
         return False
 
+    def returnPucksAsString(self):
+        for puck in self.pucks:
+            print("Controller.addPuck(puckID={}, init_pos={})".format(puck.retId(), puck.retPosition()))
+
     @staticmethod
     def returnPosAsString(pos):
         return '[' + str(pos[0]) + ', ' + str(pos[1]) + ']'
@@ -144,9 +148,7 @@ class Controller(PathFinder, Robot, Puck):
 
     def updateAllocationMatrix(self):
         for robot in self.robots:
-            if robot.retCurrentState() != RobotState.Idling: # robot has active mission
-                LOG.info("Robot " + str(robot.retId()) + " has an active mission")
-
+            if robot.retCurrentState() != RobotState.Idling:
                 # 1. usunięcie poprzedniej pozycji jesli była zajęta czyli jesli robot wykonał już jakiś krok
                 if robot.mission.retCounter() == 1:  # usuniecie pozycji poczatkowej
                     previous_step = robot.retInitPos()
@@ -156,17 +158,24 @@ class Controller(PathFinder, Robot, Puck):
                     previous_step = robot.mission.retPath()[robot.mission.retCounter() - 2]
                     if (previous_step == 'pick') or (previous_step == 'drop'):
                         previous_step = robot.mission.retPath()[robot.mission.retCounter() - 3]
-                    if self.allocMatrix[previous_step[0], previous_step[1]] == robot.retId(): # jeśli wcześniej jej nie usunął
+                    if self.allocMatrix[
+                        previous_step[0], previous_step[1]] == robot.retId():  # jeśli wcześniej jej nie usunął
                         self.allocMatrix[previous_step[0], previous_step[1]] = -1
                         LOG.info("Robot " + str(robot.retId()) + " release " + str(previous_step))
 
+        # # 2. alokacja aktualnej pozycji robota - jest tam wiec musi miec zajętą
+        for robot in self.robots:
+            if robot.retCurrentState() != RobotState.Idling:  # robot has active mission
                 # 2. alokacja aktualnej pozycji robota - jest tam wiec musi miec zajętą
                 robot_pos = robot.retPosition()
                 self.allocMatrix[robot_pos[0], robot_pos[1]] = robot.retId()
                 LOG.info("Robot " + str(robot.retId()) + " alloc " + str(robot_pos) + " (pos)")
 
-                # 3. alokacja miejsca na kolejny krok jeśli miejsce jest wolne
-                # oznacza to tez ze robot na pewno wykona kolejny krok
+        # 3. alokacja miejsca na kolejny krok jeśli miejsce jest wolne
+        # oznacza to tez ze robot na pewno wykona kolejny krok
+        for robot in self.robots:
+            if robot.retCurrentState() != RobotState.Idling:  # robot has active mission
+                LOG.info("Robot " + str(robot.retId()) + " has an active mission")
                 if robot.mission.retCounter() < len(robot.mission.retPath()):
                     next_step = robot.mission.retPath()[robot.mission.retCounter()]
                     if next_step != 'pick' and next_step != 'drop':
@@ -175,6 +184,18 @@ class Controller(PathFinder, Robot, Puck):
                             LOG.info("Robot " + str(robot.retId()) + " alloc " + str(next_step) + " (next)")
                         else:  # robot stoi w miejscu
                             LOG.info("Robot " + str(robot.retId()) + " couldn't alloc " + str(next_step))
+                            # deadlock detection
+                            # jesli na polu, na które nie moge wjechać jest robot, który chce wjechać na
+                            # moje pole to znaczy ze jest deadlock  |R1| <-> |R2|
+                            sec_rob_id = self.allocMatrix[next_step[0], next_step[1]]
+                            sec_rob_next_step = self.robots[int(sec_rob_id)].mission.retPath()[
+                                self.robots[int(sec_rob_id)].mission.retCounter()]
+                            if sec_rob_next_step == robot.retPosition():
+                                LOG.warning("DEADLOCK: Robot " + str(robot.retId()) + " on position " + \
+                                            str(robot.retPosition()) + " want's alloc " + str(next_step) + \
+                                            ". AND Robot " + str(int(sec_rob_id)) + " on position " + \
+                                            str(self.robots[int(sec_rob_id)].retPosition()) + \
+                                            " want's alloc " + str(sec_rob_next_step))
 
                 # 4. robot zakończył misję. Wyczyszczenie misji oraz robot w stan idling
                 else:
@@ -232,14 +253,3 @@ class Controller(PathFinder, Robot, Puck):
                             LOG.info("Robot " + str(robot.retId()) + " stay on " + str(robot.retPosition()) +
                                      ". Field " + str(next_step) +
                                      " was allocated for some robot and can be use in next step")
-
-
-
-
-
-
-
-
-
-
-
