@@ -4,6 +4,7 @@
 * Kamil Goś
 * Jakub Rotkiewicz
 * Damian Lickindorf
+* Jakub Wojtylak
 
 ## General info
 Robot swarm for puck collection	
