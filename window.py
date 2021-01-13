@@ -133,15 +133,13 @@ class Algorithm():
 
     def add_puck(self):
         while True:
-            print("searching")
-            y_pos = random.randint(3, 8)
-            x_pos = random.randint(3, 7)
-            print("y: "+ str(y_pos) + " x: "+ str(x_pos))
-            if not self.Controller.checkIfPuckIsOnPosition([y_pos, x_pos]):
-                self.Controller.addPuck(len(self.Controller.pucks), init_pos=[y_pos, x_pos])
+            rand_pos = [randint(0, self.Map.retGridSize()[0] - 3), randint(1, self.Map.retGridSize()[1]) - 1]
+            if not self.Controller.checkIfPuckIsOnPosition(rand_pos) and rand_pos != self.Map.retContainerPos():
+                self.Controller.addPuck(len(self.Controller.pucks), rand_pos)
                 print("found free space")
                 break
         self.Window.pucksNumber.setProperty("value", len(self.Controller.pucks))
+        self.Window.plot()
         self.Window.repaint()
 
 
@@ -358,23 +356,23 @@ class Main_Window(QMainWindow):
         self.addPuckButton.setText(_translate("MainWindow", "Add random puck"))
         self.startButton.setText(_translate("MainWindow", "start/stop"))
         # self.retranslateUi(MainWindow)
-    def update_progress(self,number_of_pucks):
-        self.progressBar.setValue(number_of_pucks)
+    # def update_progress(self,number_of_pucks):
+    #     self.progressBar.setValue(number_of_pucks)
 
     def plot(self):
             self.canvas.draw()
 
-    def add_puck(self):
-        while True:
-            print("searching")
-            y_pos = random.randint(3, 8)
-            x_pos = random.randint(0, 7)
-            print("y: "+ str(y_pos) + " x: "+ str(x_pos))
-            if not self.algorithm.Controller.checkIfPuckIsOnPosition([y_pos, x_pos]):
-                self.algorithm.Controller.addPuck(len(self.algorithm.Controller.pucks), init_pos=[y_pos, x_pos])
-                print("found free space")
-                break
-        self.pucksNumber.setProperty("value", len(self.algorithm.Controller.pucks))
+    # def add_puck(self):
+    #     while True:
+    #         print("searching")
+    #         y_pos = random.randint(3, 7)
+    #         x_pos = random.randint(0, 7)
+    #         print("y: "+ str(y_pos) + " x: "+ str(x_pos))
+    #         if not self.algorithm.Controller.checkIfPuckIsOnPosition([y_pos, x_pos]):
+    #             self.algorithm.Controller.addPuck(len(self.algorithm.Controller.pucks), init_pos=[y_pos, x_pos])
+    #             print("found free space")
+    #             break
+    #     self.pucksNumber.setProperty("value", len(self.algorithm.Controller.pucks))
 
 
 #
