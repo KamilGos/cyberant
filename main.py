@@ -1,4 +1,4 @@
-import HLC.controller as controller
+import HLC.controller
 import environment
 import logging
 import time
@@ -12,13 +12,13 @@ LOGGER_DISABLED = False
 LOG.disabled = LOGGER_DISABLED
 
 PLOT_FIGURE = True
-PRINT_CONSOLE_GRID = True
+PRINT_CONSOLE_GRID = False
 
 AUTO_GENERATE = True
 STEP_BY_STEP = False
 # SIMULATION_TIME = 0.1  # sec per step
 SIMULATION_TIME = 'MAX'
-ROBOTS_NUM = 7
+ROBOTS_NUM = 17
 PUCKS_NUM = 30
 
 
@@ -26,9 +26,10 @@ if __name__ == "__main__":
 #    Map = environment.Map(size=[10, 8])
     Map = environment.Map(size=[10, 8])  # for debug with AUTO_GENERATE = False !
 
-    Controller = controller.Controller(gridSize=Map.retGridSize())
+    Controller = HLC.controller.Controller(gridSize=Map.retGridSize())
 
     if AUTO_GENERATE:
+        ROBOTS_NUM = Map.retGridSize()[1]-1
         for id in range(ROBOTS_NUM):
             Controller.addRobot(robotId=id)
             # time.sleep(0.1)
@@ -40,6 +41,7 @@ if __name__ == "__main__":
                     break
             Controller.addPuck(puckId=id, init_pos=rand_pos)
             # time.sleep(0.1)
+        Controller.returnPucksAsString()
     else:
         for i in range(7):
             Controller.addRobot(robotId=i)
@@ -111,8 +113,8 @@ if __name__ == "__main__":
             for puck_id in idling_pucks_ids:  # dla kazdego pucka
                 if idling_robots is True:  # jesli nadal istnieje czekajacy robot
                     robot_id, distance = Controller.DetermineNearestRobot(robots_ids=idling_robots_ids,
-                                                                        puck_id=puck_id)  # znajdz najblizszego robota
-                    Controller.assignRobotToPuck(robot_id=robot_id, puck_id=puck_id)
+                                                                          puck_id=puck_id)  # znajdz najblizszego robota
+                    Controller.assignRobotToPuck(robot_id=robot_id, puck_id=puck_id) # naprawic
                     '''
                     wyznaczanie sciezki robot-puck
                     '''
