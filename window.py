@@ -10,7 +10,8 @@ import random
 import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtWidgets import QWidget, QApplication, QMainWindow
+from PyQt5.QtGui import QValidator, QIntValidator
+from PyQt5.QtWidgets import QWidget, QApplication, QMainWindow, QDialog, QMessageBox
 from matplotlib.backends.backend_qt5agg import  NavigationToolbar2QT as NavigationToolbar
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -35,8 +36,9 @@ STEP_BY_STEP = False
 # SIMULATION_TIME = 0.1  # sec per step
 SIMULATION_TIME = 'MAX'
 ROBOTS_NUM = 7
-PUCKS_NUM = 30
-
+PUCKS_NUM = 2
+MAPSIZE_Y = 10
+MAPSIZE_X = 8
 
 # test
 
@@ -46,14 +48,22 @@ class Algorithm():
         print("created alg")
 
         self.animation_running = False
-        self.Map = environment.Map(size=[10, 8])  # for debug with AUTO_GENERATE = False !
+        self.Map = environment.Map(size=[MAPSIZE_Y, MAPSIZE_X])  # for debug with AUTO_GENERATE = False !
         self.Controller = HLC.controller.Controller(gridSize=self.Map.retGridSize())
         self.Window = Main_Window()
-        print("hello")
+
         self.Window.startButton.clicked.connect(self.start_clicked)
         # self.startButton.clicked.connect(self.start_clicked)
         self.Window.exitButton.clicked.connect(lambda: self.Window.close())
-        self.Window.addPuckButton.clicked.connect(self.add_puck)
+        self.Window.addPuckButton.clicked.connect(self.add_random_puck)
+        self.Window.addChosenPuckButton.clicked.connect(self.add_certain_puck)
+
+        self.Window.newPuckXEdit.setValidator(QIntValidator(3, self.Map.retGridSize()[1]))
+        self.Window.newPuckYEdit.setValidator(QIntValidator(0, self.Map.retGridSize()[0]))
+        self.Window.newPuckYEdit.setText(str(5))
+        self.Window.newPuckXEdit.setText(str(5))
+        self.wrong_puck_msg = QMessageBox()
+        self.wrong_puck_msg.setText("You can not add a puck there! ")
         # self.algorithm.new_puck_in_container.connect(self.update_progress)
         # self.pucksNumber.setProperty("value",len(self.algorithm.Controller.pucks))
         if AUTO_GENERATE:
@@ -131,7 +141,7 @@ class Algorithm():
         print("updating progress bar")
         self.Window.progressBar.setValue(len(self.Controller.retContainerContent()))
 
-    def add_puck(self):
+    def add_random_puck(self):
         while True:
             rand_pos = [randint(0, self.Map.retGridSize()[0] - 3), randint(1, self.Map.retGridSize()[1]) - 1]
             if not self.Controller.checkIfPuckIsOnPosition(rand_pos) and rand_pos != self.Map.retContainerPos():
@@ -143,7 +153,22 @@ class Algorithm():
         self.Window.repaint()
 
 
-
+    def add_certain_puck(self):
+        grid = self.Map.retGridSize()
+        pos = [grid[0] - int(self.Window.newPuckYEdit.text())-1, int(self.Window.newPuckXEdit.text())]
+        print(self.Map.retGridSize())
+        print(pos)
+        print("coord for new puck:" + str(int(self.Window.newPuckYEdit.text())) + " " + str(int(self.Window.newPuckXEdit.text())))
+        if not self.Controller.checkIfPuckIsOnPosition(pos) and pos != self.Map.retContainerPos() and pos[0] < self.Map.retGridSize()[0] - 1 :
+            self.Controller.addPuck(len(self.Controller.pucks), pos)
+        else:
+            print("wrong puck placement")
+            self.wrong_puck_msg.exec()
+        self.Window.plot()
+        # else:
+        self.Window.pucksNumber.setProperty("value", len(self.Controller.pucks))
+        self.Window.newPuckXEdit.clear()
+        self.Window.newPuckYEdit.clear()
 
     def start_clicked(self):
         _translate = QtCore.QCoreApplication.translate
@@ -300,6 +325,51 @@ class Main_Window(QMainWindow):
         self.addPuckButton.setSizePolicy(sizePolicy)
         self.addPuckButton.setObjectName("addPuckButton")
         self.RightLayout.addWidget(self.addPuckButton)
+        self.addPuckLayout = QtWidgets.QVBoxLayout()
+        self.addPuckLayout.setObjectName("addPuckLayout")
+        self.ButtonLayout = QtWidgets.QHBoxLayout()
+        self.ButtonLayout.setObjectName("ButtonLayout")
+        self.coordVLayout = QtWidgets.QVBoxLayout()
+        self.coordVLayout.setObjectName("coordVLayout")
+        self.yHLayout = QtWidgets.QHBoxLayout()
+        self.yHLayout.setObjectName("yHLayout")
+        self.NewPuckXLabel = QtWidgets.QLabel(self.centralwidget)
+        self.NewPuckXLabel.setObjectName("NewPuckXLabel")
+        self.yHLayout.addWidget(self.NewPuckXLabel)
+        self.newPuckXEdit = QtWidgets.QLineEdit(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.newPuckXEdit.sizePolicy().hasHeightForWidth())
+        self.newPuckXEdit.setSizePolicy(sizePolicy)
+        self.newPuckXEdit.setObjectName("newPuckXEdit")
+        self.yHLayout.addWidget(self.newPuckXEdit)
+        self.coordVLayout.addLayout(self.yHLayout)
+        self.xHLayout = QtWidgets.QHBoxLayout()
+        self.xHLayout.setObjectName("xHLayout")
+        self.newPuckYLabel = QtWidgets.QLabel(self.centralwidget)
+        self.newPuckYLabel.setObjectName("newPuckYLabel")
+        self.xHLayout.addWidget(self.newPuckYLabel)
+        self.newPuckYEdit = QtWidgets.QLineEdit(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.newPuckYEdit.sizePolicy().hasHeightForWidth())
+        self.newPuckYEdit.setSizePolicy(sizePolicy)
+        self.newPuckYEdit.setObjectName("newPuckYEdit")
+        self.xHLayout.addWidget(self.newPuckYEdit)
+        self.coordVLayout.addLayout(self.xHLayout)
+        self.ButtonLayout.addLayout(self.coordVLayout)
+        self.addChosenPuckButton = QtWidgets.QPushButton(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.addChosenPuckButton.sizePolicy().hasHeightForWidth())
+        self.addChosenPuckButton.setSizePolicy(sizePolicy)
+        self.addChosenPuckButton.setObjectName("addChosenPuckButton")
+        self.ButtonLayout.addWidget(self.addChosenPuckButton)
+        self.addPuckLayout.addLayout(self.ButtonLayout)
+        self.RightLayout.addLayout(self.addPuckLayout)
         spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
         self.RightLayout.addItem(spacerItem)
         self.startButton = QtWidgets.QPushButton(self.centralwidget)
@@ -318,14 +388,13 @@ class Main_Window(QMainWindow):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.progressBar.sizePolicy().hasHeightForWidth())
         self.progressBar.setSizePolicy(sizePolicy)
-        self.progressBar.setProperty("value", 0)
-        self.progressBar.setObjectName("progressBar")
         self.progressBar.setStyleSheet("#BlueProgressBar {\n"
                                        "    border: 2px solid #2196F3;\n"
                                        "    border-radius: 5px;\n"
                                        "    background-color: #E0E0E0;\n"
-                                       "    color:blue;\n"                                       
                                        "}")
+        self.progressBar.setProperty("value", 0)
+        self.progressBar.setObjectName("progressBar")
         self.RightLayout.addWidget(self.progressBar)
         self.horizontalLayout.addLayout(self.RightLayout)
         self.horizontalLayout_2.addLayout(self.horizontalLayout)
@@ -333,20 +402,11 @@ class Main_Window(QMainWindow):
         self.menubar = QtWidgets.QMenuBar(self)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 815, 21))
         self.menubar.setObjectName("menubar")
-        self.setMenuBar(self.menubar)
-        self.statusbar = QtWidgets.QStatusBar(self)
-        self.statusbar.setObjectName("statusbar")
-        self.setStatusBar(self.statusbar)
 
         ########## END ##########
 
         self.startButton.setStyleSheet("background-color: green")
         self.leftLayout.addWidget(self.canvas)
-        # self.startButton.clicked.connect(self.start_clicked)
-        # # self.exitButton.clicked.connect(lambda: self.close())
-        # self.addPuckButton.clicked.connect(self.add_puck)
-        # self.algorithm.new_puck_in_container.connect(self.update_progress)
-        # self.pucksNumber.setProperty("value",len(self.algorithm.Controller.pucks))
         self.robotsNumber.setProperty("value",ROBOTS_NUM)
         _translate = QtCore.QCoreApplication.translate
         self.setWindowTitle(_translate("MainWindow", "MainWindow"))
@@ -354,7 +414,11 @@ class Main_Window(QMainWindow):
         self.robotsNumberLabel.setText(_translate("MainWindow", "Number of robots:"))
         self.pucksNumberLabel.setText(_translate("MainWindow", "Number of pucks:"))
         self.addPuckButton.setText(_translate("MainWindow", "Add random puck"))
+        self.NewPuckXLabel.setText(_translate("MainWindow", "Coord X:"))
+        self.newPuckYLabel.setText(_translate("MainWindow", "Coord Y:"))
+        self.addChosenPuckButton.setText(_translate("MainWindow", "Add puck for chosen field"))
         self.startButton.setText(_translate("MainWindow", "start/stop"))
+
         # self.retranslateUi(MainWindow)
     # def update_progress(self,number_of_pucks):
     #     self.progressBar.setValue(number_of_pucks)
