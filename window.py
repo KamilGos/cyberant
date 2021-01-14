@@ -36,8 +36,9 @@ STEP_BY_STEP = False
 # SIMULATION_TIME = 0.1  # sec per step
 SIMULATION_TIME = 'MAX'
 ROBOTS_NUM = 7
-PUCKS_NUM = 30
-
+PUCKS_NUM = 2
+MAPSIZE_Y = 10
+MAPSIZE_X = 8
 
 # test
 
@@ -47,15 +48,22 @@ class Algorithm():
         print("created alg")
 
         self.animation_running = False
-        self.Map = environment.Map(size=[10, 8])  # for debug with AUTO_GENERATE = False !
+        self.Map = environment.Map(size=[MAPSIZE_Y, MAPSIZE_X])  # for debug with AUTO_GENERATE = False !
         self.Controller = HLC.controller.Controller(gridSize=self.Map.retGridSize())
         self.Window = Main_Window()
-        print("hello")
+
         self.Window.startButton.clicked.connect(self.start_clicked)
         # self.startButton.clicked.connect(self.start_clicked)
         self.Window.exitButton.clicked.connect(lambda: self.Window.close())
         self.Window.addPuckButton.clicked.connect(self.add_random_puck)
         self.Window.addChosenPuckButton.clicked.connect(self.add_certain_puck)
+
+        self.Window.newPuckXEdit.setValidator(QIntValidator(3, self.Map.retGridSize()[1]))
+        self.Window.newPuckYEdit.setValidator(QIntValidator(0, self.Map.retGridSize()[0]))
+        self.Window.newPuckYEdit.setText(str(5))
+        self.Window.newPuckXEdit.setText(str(5))
+        self.wrong_puck_msg = QMessageBox()
+        self.wrong_puck_msg.setText("You can not add a puck there! ")
         # self.algorithm.new_puck_in_container.connect(self.update_progress)
         # self.pucksNumber.setProperty("value",len(self.algorithm.Controller.pucks))
         if AUTO_GENERATE:
@@ -147,15 +155,18 @@ class Algorithm():
 
     def add_certain_puck(self):
         grid = self.Map.retGridSize()
-        pos = [grid[0] - int(self.Window.newPuckYEdit.text()),int(self.Window.newPuckXEdit.text())]
+        pos = [grid[0] - int(self.Window.newPuckYEdit.text())-1, int(self.Window.newPuckXEdit.text())]
         print(self.Map.retGridSize())
         print(pos)
-        if not self.Controller.checkIfPuckIsOnPosition(pos) and pos != self.Map.retContainerPos():
+        print("coord for new puck:" + str(int(self.Window.newPuckYEdit.text())) + " " + str(int(self.Window.newPuckXEdit.text())))
+        if not self.Controller.checkIfPuckIsOnPosition(pos) and pos != self.Map.retContainerPos() and pos[0] < self.Map.retGridSize()[0] - 1 :
             self.Controller.addPuck(len(self.Controller.pucks), pos)
         else:
-            dialog = QMessageBox()
-            dialog.setText("You can not add a puck there! ")
-            dialog.show()
+            print("wrong puck placement")
+            self.wrong_puck_msg.exec()
+        self.Window.plot()
+        # else:
+        self.Window.pucksNumber.setProperty("value", len(self.Controller.pucks))
         self.Window.newPuckXEdit.clear()
         self.Window.newPuckYEdit.clear()
 
@@ -302,7 +313,7 @@ class Main_Window(QMainWindow):
         self.robotsNumber.setObjectName("robotsNumber")
         self.horizontalLayout_3.addWidget(self.robotsNumber)
         self.pucksNumber = QtWidgets.QLCDNumber(self.centralwidget)
-        self.pucksNumber.setProperty("value", 10.0)
+        self.pucksNumber.setProperty("value", PUCKS_NUM)
         self.pucksNumber.setObjectName("pucksNumber")
         self.horizontalLayout_3.addWidget(self.pucksNumber)
         self.RightLayout.addLayout(self.horizontalLayout_3)
@@ -407,8 +418,7 @@ class Main_Window(QMainWindow):
         self.newPuckYLabel.setText(_translate("MainWindow", "Coord Y:"))
         self.addChosenPuckButton.setText(_translate("MainWindow", "Add puck for chosen field"))
         self.startButton.setText(_translate("MainWindow", "start/stop"))
-        self.newPuckXEdit.setValidator(QIntValidator(3, 10))
-        self.newPuckXEdit.setValidator(QIntValidator(0, 10))
+
         # self.retranslateUi(MainWindow)
     # def update_progress(self,number_of_pucks):
     #     self.progressBar.setValue(number_of_pucks)
