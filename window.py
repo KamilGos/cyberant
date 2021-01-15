@@ -12,7 +12,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QValidator, QIntValidator
 from PyQt5.QtWidgets import QWidget, QApplication, QMainWindow, QDialog, QMessageBox
-from matplotlib.backends.backend_qt5agg import  NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import HLC.controller
@@ -21,6 +21,7 @@ import logging
 import time
 from random import randint
 import matplotlib.pyplot as plt
+
 LOG_FORMAT = '%(levelname)-10s %(name)-20s %(funcName)-20s  %(message)s'
 logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
 LOG = logging.getLogger(__name__)
@@ -36,9 +37,11 @@ STEP_BY_STEP = False
 # SIMULATION_TIME = 0.1  # sec per step
 SIMULATION_TIME = 'MAX'
 ROBOTS_NUM = 7
-PUCKS_NUM = 2
+PUCKS_NUM = 30
 MAPSIZE_Y = 10
 MAPSIZE_X = 8
+PUCK_RAIN_NUM = 5
+
 
 # test
 
@@ -57,13 +60,15 @@ class Algorithm():
         self.Window.exitButton.clicked.connect(lambda: self.Window.close())
         self.Window.addPuckButton.clicked.connect(self.add_random_puck)
         self.Window.addChosenPuckButton.clicked.connect(self.add_certain_puck)
-
+        self.Window.puckRainButton.clicked.connect(self.puck_rain)
+        self.Window.timeStepSlider.valueChanged.connect(self.change_step_time)
         self.Window.newPuckXEdit.setValidator(QIntValidator(3, self.Map.retGridSize()[1]))
         self.Window.newPuckYEdit.setValidator(QIntValidator(0, self.Map.retGridSize()[0]))
         self.Window.newPuckYEdit.setText(str(5))
         self.Window.newPuckXEdit.setText(str(5))
         self.wrong_puck_msg = QMessageBox()
         self.wrong_puck_msg.setText("You can not add a puck there! ")
+        self.simulation_time = 0
         # self.algorithm.new_puck_in_container.connect(self.update_progress)
         # self.pucksNumber.setProperty("value",len(self.algorithm.Controller.pucks))
         if AUTO_GENERATE:
@@ -152,14 +157,30 @@ class Algorithm():
         self.Window.plot()
         self.Window.repaint()
 
+    def change_step_time(self):
+        self.simulation_time = self.Window.timeStepSlider.value() / 2
+
+    def puck_rain(self):
+        for i in range(PUCK_RAIN_NUM):
+            while True:
+                rand_pos = [randint(0, self.Map.retGridSize()[0] - 3), randint(1, self.Map.retGridSize()[1]) - 1]
+                if not self.Controller.checkIfPuckIsOnPosition(rand_pos) and rand_pos != self.Map.retContainerPos():
+                    self.Controller.addPuck(len(self.Controller.pucks), rand_pos)
+                    print("found free space")
+                    break
+        self.Window.pucksNumber.setProperty("value", len(self.Controller.pucks))
+        self.Window.plot()
+        self.Window.repaint()
 
     def add_certain_puck(self):
         grid = self.Map.retGridSize()
-        pos = [grid[0] - int(self.Window.newPuckYEdit.text())-1, int(self.Window.newPuckXEdit.text())]
+        pos = [grid[0] - int(self.Window.newPuckYEdit.text()) - 1, int(self.Window.newPuckXEdit.text())]
         print(self.Map.retGridSize())
         print(pos)
-        print("coord for new puck:" + str(int(self.Window.newPuckYEdit.text())) + " " + str(int(self.Window.newPuckXEdit.text())))
-        if not self.Controller.checkIfPuckIsOnPosition(pos) and pos != self.Map.retContainerPos() and pos[0] < self.Map.retGridSize()[0] - 1 :
+        print("coord for new puck:" + str(int(self.Window.newPuckYEdit.text())) + " " + str(
+            int(self.Window.newPuckXEdit.text())))
+        if not self.Controller.checkIfPuckIsOnPosition(pos) and pos != self.Map.retContainerPos() and pos[0] < \
+                self.Map.retGridSize()[0] - 1:
             self.Controller.addPuck(len(self.Controller.pucks), pos)
         else:
             print("wrong puck placement")
@@ -182,8 +203,6 @@ class Algorithm():
             self.animation_running = False
         self.run_animation()
         self.Window.startButton.repaint()
-
-
 
     def run_animation(self):
 
@@ -233,8 +252,8 @@ class Algorithm():
 
                 if STEP_BY_STEP:
                     inp = input("Press to do step...")
-                elif SIMULATION_TIME != 'MAX':
-                    time.sleep(SIMULATION_TIME)
+                elif self.simulation_time != 'MAX':
+                    time.sleep(self.simulation_time)
 
                 self.Controller.executeOneStep()
                 if PRINT_CONSOLE_GRID:
@@ -325,6 +344,14 @@ class Main_Window(QMainWindow):
         self.addPuckButton.setSizePolicy(sizePolicy)
         self.addPuckButton.setObjectName("addPuckButton")
         self.RightLayout.addWidget(self.addPuckButton)
+        self.puckRainButton = QtWidgets.QPushButton(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.puckRainButton.sizePolicy().hasHeightForWidth())
+        self.puckRainButton.setSizePolicy(sizePolicy)
+        self.puckRainButton.setObjectName("puckRainButton")
+        self.RightLayout.addWidget(self.puckRainButton)
         self.addPuckLayout = QtWidgets.QVBoxLayout()
         self.addPuckLayout.setObjectName("addPuckLayout")
         self.ButtonLayout = QtWidgets.QHBoxLayout()
@@ -382,16 +409,33 @@ class Main_Window(QMainWindow):
         self.RightLayout.addWidget(self.startButton)
         spacerItem1 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
         self.RightLayout.addItem(spacerItem1)
+        self.timeStepSlider = QtWidgets.QSlider(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.timeStepSlider.sizePolicy().hasHeightForWidth())
+        self.timeStepSlider.setSizePolicy(sizePolicy)
+        self.timeStepSlider.setMinimum(0)
+        self.timeStepSlider.setMaximum(10)
+        self.timeStepSlider.setSingleStep(1)
+        self.timeStepSlider.setOrientation(QtCore.Qt.Horizontal)
+        self.timeStepSlider.setObjectName("timeStepSlider")
+        self.RightLayout.addWidget(self.timeStepSlider)
         self.progressBar = QtWidgets.QProgressBar(self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.progressBar.sizePolicy().hasHeightForWidth())
         self.progressBar.setSizePolicy(sizePolicy)
-        self.progressBar.setStyleSheet("#BlueProgressBar {\n"
-                                       "    border: 2px solid #2196F3;\n"
-                                       "    border-radius: 5px;\n"
-                                       "    background-color: #E0E0E0;\n"
+        self.progressBar.setStyleSheet("QProgressBar{"
+                                       "border: solid grey;"
+                                       "border-radius: 15px;"
+                                       " color: black; "
+                                       " text-align:center"
+                                       "}"
+                                       "QProgressBar::chunk {"
+                                       "background-color: # 05B8CC;"
+                                       "border-radius :15px;"
                                        "}")
         self.progressBar.setProperty("value", 0)
         self.progressBar.setObjectName("progressBar")
@@ -402,17 +446,21 @@ class Main_Window(QMainWindow):
         self.menubar = QtWidgets.QMenuBar(self)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 815, 21))
         self.menubar.setObjectName("menubar")
-
+        self.setMenuBar(self.menubar)
+        self.statusbar = QtWidgets.QStatusBar(self)
+        self.statusbar.setObjectName("statusbar")
+        self.setStatusBar(self.statusbar)
         ########## END ##########
 
         self.startButton.setStyleSheet("background-color: green")
         self.leftLayout.addWidget(self.canvas)
-        self.robotsNumber.setProperty("value",ROBOTS_NUM)
+        self.robotsNumber.setProperty("value", ROBOTS_NUM)
         _translate = QtCore.QCoreApplication.translate
         self.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.exitButton.setText(_translate("MainWindow", "exit app"))
         self.robotsNumberLabel.setText(_translate("MainWindow", "Number of robots:"))
         self.pucksNumberLabel.setText(_translate("MainWindow", "Number of pucks:"))
+        self.puckRainButton.setText(_translate("MainWindow", "It\'s raining pucks.."))
         self.addPuckButton.setText(_translate("MainWindow", "Add random puck"))
         self.NewPuckXLabel.setText(_translate("MainWindow", "Coord X:"))
         self.newPuckYLabel.setText(_translate("MainWindow", "Coord Y:"))
@@ -420,11 +468,12 @@ class Main_Window(QMainWindow):
         self.startButton.setText(_translate("MainWindow", "start/stop"))
 
         # self.retranslateUi(MainWindow)
+
     # def update_progress(self,number_of_pucks):
     #     self.progressBar.setValue(number_of_pucks)
 
     def plot(self):
-            self.canvas.draw()
+        self.canvas.draw()
 
     # def add_puck(self):
     #     while True:
