@@ -184,7 +184,6 @@ class Controller(PathFinder, Robot, Puck):
                 deadlock = robot.mission.checkIfHadDeadlock()
                 if deadlock[0]:
                     self.allocMatrix[deadlock[1][0], deadlock[1][1]] = -1
-                    print(self.allocMatrix)
                 elif robot.mission.retCounter() == 1:  # usuniecie pozycji poczatkowej
                     previous_step = robot.retInitPos()
                     self.allocMatrix[previous_step[0], previous_step[1]] = -1
@@ -238,11 +237,9 @@ class Controller(PathFinder, Robot, Puck):
                                 # pojawienie się deadlocka
                                 new_path = self.generateNewMissionAfterDeadlock(robot=robot, dead_field=next_step)[1:]
                                 LOG.warning("DEADLOCK FIXED: Robot " + str(robot.retId()) + " has new path: " + str(new_path))
-                                time.sleep(2)
                                 robot.mission.setPath(new_path)
                                 robot.mission.resetCounter()
                                 robot.mission.setDeadlock(dead_field=robot.retPosition())
-                                print(robot.mission.had_deadlock)
 
                 # 4. robot zakończył misję. Wyczyszczenie misji oraz robot w stan idling
                 else:
