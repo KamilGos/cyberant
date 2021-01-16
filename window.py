@@ -52,7 +52,7 @@ class Algorithm():
 
         self.animation_running = False
         self.Map = environment.Map(size=[MAPSIZE_Y, MAPSIZE_X])  # for debug with AUTO_GENERATE = False !
-        self.Controller = HLC.controller.Controller(gridSize=self.Map.retGridSize())
+        self.Controller = HLC.controller.Controller(gridSize=self.Map.retGridSize(), container_pos=self.Map.retContainerPos())
         self.Window = Main_Window()
 
         self.Window.startButton.clicked.connect(self.start_clicked)
@@ -239,8 +239,7 @@ class Algorithm():
                             '''
                                 wyznaczanie sciezki robot-puck
                                 '''
-                            path = self.Controller.generateRobotMissionPath(robot_id=robot_id, puck_id=puck_id,
-                                                                            container_pos=self.Map.retContainerPos())
+                            path = self.Controller.generateRobotMissionPath(robot_id=robot_id, puck_id=puck_id)
                             self.Controller.setRobotMission(robot_id=robot_id, puck_id=puck_id, path=path)
 
                             idling_robots, idling_robots_ids = self.Controller.checkIdlingRobots()

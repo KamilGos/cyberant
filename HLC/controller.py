@@ -5,6 +5,7 @@ import enum
 import numpy as np
 import logging
 from main import LOGGER_DISABLED
+import time
 
 LOG_FORMAT = '%(levelname)-10s %(name)-20s %(funcName)-20s  %(message)s'
 logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
@@ -13,7 +14,7 @@ LOG.disabled = LOGGER_DISABLED
 
 
 class Controller(PathFinder, Robot, Puck):
-    def __init__(self, gridSize):
+    def __init__(self, gridSize, container_pos):
         super().__init__(gridSize)
         self.gridSize = gridSize
         self.robots = []
@@ -21,6 +22,7 @@ class Controller(PathFinder, Robot, Puck):
         self.allocMatrix = np.zeros(self.gridSize)
         self.allocMatrix.fill(-1)
         self.containerContent = []
+        self.container_pos = container_pos
 
     def addPuckToContainer(self, puck_id):
         self.containerContent.append(puck_id)
@@ -62,7 +64,8 @@ class Controller(PathFinder, Robot, Puck):
         return '[' + str(pos[0]) + ', ' + str(pos[1]) + ']'
 
     def generatePath(self, start_pos, stop_pos):
-        return PathFinder.dijkstra(self, self.returnPosAsString(start_pos), self.returnPosAsString(stop_pos))
+        return PathFinder.dijkstra(self, self.returnPosAsString(start_pos), self.returnPosAsString(stop_pos),
+                                   edges=self.retEdges())
 
     def DetermineNearestRobot(self, robots_ids, puck_id):
         s_distance = (self.gridSize[0] * self.gridSize[1]) ** 2
@@ -108,23 +111,23 @@ class Controller(PathFinder, Robot, Puck):
                                  stop_pos=self.pucks[puck_id].retPosition())
         return path[1:len(path)]
 
-    def determinePathPuckContainer(self, puck_id, container_pos):
+    def determinePathPuckContainer(self, puck_id):
         path = self.generatePath(start_pos=self.pucks[puck_id].retPosition(),
-                                 stop_pos=container_pos)
+                                 stop_pos=self.container_pos)
         return path[1:len(path)]
 
-    def determinePathRobotReturn(self, robot_id, container_pos):
-        path = [[container_pos[0] + 1, container_pos[1]],
-                [container_pos[0] + 2, container_pos[1]]]  # add under-conteiner place two places
-        for i in range(1, (container_pos[1] - robot_id) + 1):  # add last row path
-            path.append([container_pos[0] + 2, container_pos[1] - i])
+    def determinePathRobotReturn(self, robot_id):
+        path = [[self.container_pos[0] + 1, self.container_pos[1]],
+                [self.container_pos[0] + 2, self.container_pos[1]]]  # add under-conteiner place two places
+        for i in range(1, (self.container_pos[1] - robot_id) + 1):  # add last row path
+            path.append([self.container_pos[0] + 2, self.container_pos[1] - i])
         path.append(self.robots[robot_id].retInitPos())  # add robot init possition
         return path
 
-    def generateRobotMissionPath(self, robot_id, puck_id, container_pos):
+    def generateRobotMissionPath(self, robot_id, puck_id):
         robot_puck_path = self.determinePathRobotPuck(robot_id=robot_id, puck_id=puck_id)
-        puck_cont_path = self.determinePathPuckContainer(puck_id=puck_id, container_pos=container_pos)
-        robot_return_path = self.determinePathRobotReturn(robot_id=robot_id, container_pos=container_pos)
+        puck_cont_path = self.determinePathPuckContainer(puck_id=puck_id)
+        robot_return_path = self.determinePathRobotReturn(robot_id=robot_id)
         full_path = []
         full_path.extend(robot_puck_path)
         full_path.append('pick')
@@ -144,13 +147,45 @@ class Controller(PathFinder, Robot, Puck):
     def showAllocationMatrix(self):
         print(self.allocMatrix)
 
+    def generateNewMissionAfterDeadlock(self, robot, dead_field):
+        if robot.checkIfRobotCarrying():
+            robot_cont_path = PathFinder.dijkstra(self, self.returnPosAsString(robot.retPosition()),
+                                                  self.returnPosAsString(self.container_pos),
+                                                  edges=PathFinder.removeEdge(self, remove_coord=self.returnPosAsString(
+                                                      dead_field)))
+            robot_return_path = self.determinePathRobotReturn(robot_id=robot.retId())
+            full_path = []
+            full_path.extend(robot_cont_path)
+            full_path.append('drop')
+            full_path.extend(robot_return_path)
+            return full_path
+        else:  # robot has not puck yet
+            robot_puck_path = PathFinder.dijkstra(self, self.returnPosAsString(robot.retPosition()),
+                                                  self.returnPosAsString(
+                                                      self.pucks[robot.mission.retPuckId()].retPosition()),
+                                                  edges=PathFinder.removeEdge(self, remove_coord=self.returnPosAsString(
+                                                      dead_field)))
+            puck_cont_path = self.determinePathPuckContainer(puck_id=robot.mission.retPuckId())
+            robot_return_path = self.determinePathRobotReturn(robot_id=robot.retId())
+            full_path = []
+            full_path.extend(robot_puck_path)
+            full_path.append('pick')
+            full_path.extend(puck_cont_path)
+            full_path.append('drop')
+            full_path.extend(robot_return_path)
+            return full_path
+
     # def updateAllocMatrix(self, robot_id, ):
 
     def updateAllocationMatrix(self):
         for robot in self.robots:
             if robot.retCurrentState() != RobotState.Idling:
                 # 1. usunięcie poprzedniej pozycji jesli była zajęta czyli jesli robot wykonał już jakiś krok
-                if robot.mission.retCounter() == 1:  # usuniecie pozycji poczatkowej
+                deadlock = robot.mission.checkIfHadDeadlock()
+                if deadlock[0]:
+                    self.allocMatrix[deadlock[1][0], deadlock[1][1]] = -1
+                    print(self.allocMatrix)
+                elif robot.mission.retCounter() == 1:  # usuniecie pozycji poczatkowej
                     previous_step = robot.retInitPos()
                     self.allocMatrix[previous_step[0], previous_step[1]] = -1
                     LOG.info("Robot " + str(robot.retId()) + " release " + str(previous_step) + " (init)")
@@ -167,9 +202,12 @@ class Controller(PathFinder, Robot, Puck):
         for robot in self.robots:
             if robot.retCurrentState() != RobotState.Idling:  # robot has active mission
                 # 2. alokacja aktualnej pozycji robota - jest tam wiec musi miec zajętą
-                robot_pos = robot.retPosition()
-                self.allocMatrix[robot_pos[0], robot_pos[1]] = robot.retId()
-                LOG.info("Robot " + str(robot.retId()) + " alloc " + str(robot_pos) + " (pos)")
+                if robot.mission.checkIfHadDeadlock()[0] == False:
+                    robot_pos = robot.retPosition()
+                    self.allocMatrix[robot_pos[0], robot_pos[1]] = robot.retId()
+                    LOG.info("Robot " + str(robot.retId()) + " alloc " + str(robot_pos) + " (pos)")
+                else:
+                    robot.mission.resetDeadlock()
 
         # 3. alokacja miejsca na kolejny krok jeśli miejsce jest wolne
         # oznacza to tez ze robot na pewno wykona kolejny krok
@@ -192,10 +230,19 @@ class Controller(PathFinder, Robot, Puck):
                                 self.robots[int(sec_rob_id)].mission.retCounter()]
                             if sec_rob_next_step == robot.retPosition():
                                 LOG.warning("DEADLOCK: Robot " + str(robot.retId()) + " on position " + \
-                                            str(robot.retPosition()) + " want's alloc " + str(next_step) + \
+                                            str(robot.retPosition()) + " wants allocate " + str(next_step) + \
                                             ". AND Robot " + str(int(sec_rob_id)) + " on position " + \
                                             str(self.robots[int(sec_rob_id)].retPosition()) + \
-                                            " want's alloc " + str(sec_rob_next_step))
+                                            " wants allocate " + str(sec_rob_next_step))
+                                # usuwanie deadlocka - wyznaczenie nowej trasy z pominięciem miejsca powodującego
+                                # pojawienie się deadlocka
+                                new_path = self.generateNewMissionAfterDeadlock(robot=robot, dead_field=next_step)[1:]
+                                LOG.warning("DEADLOCK FIXED: Robot " + str(robot.retId()) + " has new path: " + str(new_path))
+                                time.sleep(2)
+                                robot.mission.setPath(new_path)
+                                robot.mission.resetCounter()
+                                robot.mission.setDeadlock(dead_field=robot.retPosition())
+                                print(robot.mission.had_deadlock)
 
                 # 4. robot zakończył misję. Wyczyszczenie misji oraz robot w stan idling
                 else:
