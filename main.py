@@ -12,24 +12,23 @@ LOGGER_DISABLED = False
 LOG.disabled = LOGGER_DISABLED
 
 PLOT_FIGURE = True
-PRINT_CONSOLE_GRID = False
+PRINT_CONSOLE_GRID = True
 
-AUTO_GENERATE = True
+AUTO_GENERATE = False
 STEP_BY_STEP = False
 # SIMULATION_TIME = 0.1  # sec per step
 SIMULATION_TIME = 'MAX'
 ROBOTS_NUM = 17
 PUCKS_NUM = 30
 
-
 if __name__ == "__main__":
-#    Map = environment.Map(size=[10, 8])
+    #    Map = environment.Map(size=[10, 8])
     Map = environment.Map(size=[10, 8])  # for debug with AUTO_GENERATE = False !
 
-    Controller = HLC.controller.Controller(gridSize=Map.retGridSize())
+    Controller = HLC.controller.Controller(gridSize=Map.retGridSize(), container_pos=Map.retContainerPos())
 
     if AUTO_GENERATE:
-        ROBOTS_NUM = Map.retGridSize()[1]-1
+        ROBOTS_NUM = Map.retGridSize()[1] - 1
         for id in range(ROBOTS_NUM):
             Controller.addRobot(robotId=id)
             # time.sleep(0.1)
@@ -114,11 +113,11 @@ if __name__ == "__main__":
                 if idling_robots is True:  # jesli nadal istnieje czekajacy robot
                     robot_id, distance = Controller.DetermineNearestRobot(robots_ids=idling_robots_ids,
                                                                           puck_id=puck_id)  # znajdz najblizszego robota
-                    Controller.assignRobotToPuck(robot_id=robot_id, puck_id=puck_id) # naprawic
+                    Controller.assignRobotToPuck(robot_id=robot_id, puck_id=puck_id)  # naprawic
                     '''
                     wyznaczanie sciezki robot-puck
                     '''
-                    path = Controller.generateRobotMissionPath(robot_id=robot_id, puck_id=puck_id, container_pos=Map.retContainerPos())
+                    path = Controller.generateRobotMissionPath(robot_id=robot_id, puck_id=puck_id)
                     Controller.setRobotMission(robot_id=robot_id, puck_id=puck_id, path=path)
 
                     idling_robots, idling_robots_ids = Controller.checkIdlingRobots()

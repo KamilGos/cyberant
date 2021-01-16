@@ -16,6 +16,9 @@ class PathFinder:
         self.edgeLength = 1
         self.edges = self.generateEdges()
 
+    def retEdges(self):
+        return self.edges
+
     def generateEdges(self):
         edges = []
         for x in range(self.mapSize[0]):
@@ -52,13 +55,13 @@ class PathFinder:
         for edge in self.edges:
             if (edge[0] != str(remove_coord)) & (edge[1] != str(remove_coord)):
                 new_edges.append(edge)
-            else:
-                print("Removed edge: ", edge)
+            # else:
+            #     print("Removed edge: ", edge)
         return new_edges
 
-    def dijkstra(self, f, t):
+    def dijkstra(self, f, t, edges):
         g = defaultdict(list)
-        for l, r, c in self.edges:
+        for l, r, c in edges:
             g[l].append((c, r))
 
         q, seen, mins = [(0, f, ())], set(), {f: 0}

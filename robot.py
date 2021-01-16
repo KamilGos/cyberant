@@ -26,6 +26,16 @@ class Mission:
         self.path = None
         self.counter = 0
         self.puck = None
+        self.had_deadlock = [False, None]
+
+    def checkIfHadDeadlock(self):
+        return self.had_deadlock
+
+    def setDeadlock(self, dead_field):
+        self.had_deadlock = [True, dead_field]
+
+    def resetDeadlock(self):
+        self.had_deadlock = [False, None]
 
     def setStateReaching(self):
         self.mission_state = RobotMissionState.Reaching
