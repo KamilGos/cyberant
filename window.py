@@ -142,23 +142,32 @@ class Algorithm():
             self.timecounter = 0
 
     def add_certain_puck(self):
-        grid = self.Map.retGridSize()
-        pos = [grid[0] - int(self.Window.newPuckYEdit.text()) - 1, int(self.Window.newPuckXEdit.text())]
-        print(self.Map.retGridSize())
-        print(pos)
-        print("coord for new puck:" + str(int(self.Window.newPuckYEdit.text())) + " " + str(
-            int(self.Window.newPuckXEdit.text())))
-        if not self.Controller.checkIfPuckIsOnPosition(pos) and pos != self.Map.retContainerPos() and pos[0] < \
-                self.Map.retGridSize()[0] - 1:
-            self.Controller.addPuck(len(self.Controller.pucks), pos)
+        print(self.Window.newPuckYEdit.text())
+        if self.Window.newPuckYEdit.text() != "" and self.Window.newPuckYEdit.text() != "":
+            pos = [int(self.Window.newPuckYEdit.text()), int(self.Window.newPuckXEdit.text())]
+
+            if not self.Controller.checkIfPuckIsOnPosition(pos) and pos != self.Map.retContainerPos() and \
+                    pos[0] < self.Map.retGridSize()[0] - 2 and pos[1] < self.Map.retGridSize()[1]:
+                self.Controller.addPuck(len(self.Controller.pucks), pos)
+                self.Map.updategridWorld(
+                    robots=self.Controller.retRobots(),
+                    pucks=self.Controller.retPucks(),
+                    container=self.Controller.retContainerContent())
+                self.Window.plot()
+                self.Window.plot()
+                self.Window.pucksNumber.setProperty("value", len(self.Controller.pucks))
+                self.Window.newPuckXEdit.clear()
+                self.Window.newPuckYEdit.clear()
+            else:
+                self.wrong_puck_msg.exec()
         else:
-            print("wrong puck placement")
-            self.wrong_puck_msg.exec()
-        self.Window.plot()
-        # else:
-        self.Window.pucksNumber.setProperty("value", len(self.Controller.pucks))
-        self.Window.newPuckXEdit.clear()
-        self.Window.newPuckYEdit.clear()
+            print("error")
+            # no_cord_error = QMessageBox(text="You have to choose coordinates first! ", title="ERROR", icon=QMessageBox.Warning)
+            # ret = no_cord_error.exec()
+            msg = QMessageBox(icon=QMessageBox.Warning, text="You have to choose coordinates first!")
+            msg.setInformativeText("Choose X and Y coordinate")
+            msg.setWindowTitle("Error")
+            retval = msg.exec_()
 
     def start_clicked(self):
         _translate = QtCore.QCoreApplication.translate
