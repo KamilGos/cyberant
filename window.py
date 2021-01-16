@@ -32,7 +32,6 @@ LOG.disabled = LOGGER_DISABLED
 PLOT_FIGURE = True
 PRINT_CONSOLE_GRID = True
 
-AUTO_GENERATE = True
 STEP_BY_STEP = False
 # SIMULATION_TIME = 0.1  # sec per step
 SIMULATION_TIME = 'MAX'
@@ -41,9 +40,6 @@ PUCKS_NUM = 10
 MAPSIZE_Y = 10
 MAPSIZE_X = 8
 PUCK_RAIN_NUM = 5
-
-
-# test
 
 class Algorithm():
 
@@ -75,52 +71,16 @@ class Algorithm():
         self.timecounter = 0
         # self.algorithm.new_puck_in_container.connect(self.update_progress)
         # self.pucksNumber.setProperty("value",len(self.algorithm.Controller.pucks))
-        if AUTO_GENERATE:
-            for id in range(ROBOTS_NUM):
-                self.Controller.addRobot(robotId=id)
-                # time.sleep(0.1)
 
-            for id in range(PUCKS_NUM):
-                while True:
-                    rand_pos = [randint(0, self.Map.retGridSize()[0] - 3), randint(1, self.Map.retGridSize()[1]) - 1]
-                    if not self.Controller.checkIfPuckIsOnPosition(rand_pos) and rand_pos != self.Map.retContainerPos():
-                        break
-                self.Controller.addPuck(puckId=id, init_pos=rand_pos)
-                # time.sleep(0.1)
-        else:
-            for i in range(7):
-                self.Controller.addRobot(robotId=i)
+        for id in range(ROBOTS_NUM):
+            self.Controller.addRobot(robotId=id)
 
-            self.Controller.addPuck(puckId=0, init_pos=[3, 3])
-            self.Controller.addPuck(puckId=1, init_pos=[0, 7])
-            self.Controller.addPuck(puckId=2, init_pos=[6, 2])
-            self.Controller.addPuck(puckId=3, init_pos=[6, 1])
-            self.Controller.addPuck(puckId=4, init_pos=[7, 1])
-            self.Controller.addPuck(puckId=5, init_pos=[3, 5])
-            self.Controller.addPuck(puckId=6, init_pos=[4, 6])
-            self.Controller.addPuck(puckId=7, init_pos=[6, 7])
-            self.Controller.addPuck(puckId=8, init_pos=[6, 4])
-            self.Controller.addPuck(puckId=9, init_pos=[1, 7])
-            self.Controller.addPuck(puckId=10, init_pos=[1, 6])
-            self.Controller.addPuck(puckId=11, init_pos=[0, 2])
-            self.Controller.addPuck(puckId=12, init_pos=[7, 2])
-            self.Controller.addPuck(puckId=13, init_pos=[5, 2])
-            self.Controller.addPuck(puckId=14, init_pos=[5, 1])
-            self.Controller.addPuck(puckId=15, init_pos=[6, 0])
-            self.Controller.addPuck(puckId=16, init_pos=[1, 0])
-            self.Controller.addPuck(puckId=17, init_pos=[1, 3])
-            self.Controller.addPuck(puckId=18, init_pos=[4, 0])
-            self.Controller.addPuck(puckId=19, init_pos=[7, 5])
-            self.Controller.addPuck(puckId=20, init_pos=[1, 1])
-            self.Controller.addPuck(puckId=21, init_pos=[4, 4])
-            self.Controller.addPuck(puckId=22, init_pos=[2, 2])
-            self.Controller.addPuck(puckId=23, init_pos=[0, 3])
-            self.Controller.addPuck(puckId=24, init_pos=[5, 7])
-            self.Controller.addPuck(puckId=25, init_pos=[1, 5])
-            self.Controller.addPuck(puckId=26, init_pos=[3, 1])
-            self.Controller.addPuck(puckId=27, init_pos=[3, 2])
-            self.Controller.addPuck(puckId=28, init_pos=[4, 2])
-            self.Controller.addPuck(puckId=29, init_pos=[0, 6])
+        for id in range(PUCKS_NUM):
+            while True:
+                rand_pos = [randint(0, self.Map.retGridSize()[0] - 3), randint(1, self.Map.retGridSize()[1]) - 1]
+                if not self.Controller.checkIfPuckIsOnPosition(rand_pos) and rand_pos != self.Map.retContainerPos():
+                    break
+            self.Controller.addPuck(puckId=id, init_pos=rand_pos)
 
         if PRINT_CONSOLE_GRID:
             print("... Initial map ...")
@@ -157,6 +117,12 @@ class Algorithm():
                 self.Controller.addPuck(len(self.Controller.pucks), rand_pos)
                 print("found free space")
                 break
+        self.Map.updategridWorld(
+            robots=self.Controller.retRobots(),
+            pucks=self.Controller.retPucks(),
+            container=self.Controller.retContainerContent())
+        self.Window.plot()
+        self.app.processEvents()
         self.Window.pucksNumber.setProperty("value", len(self.Controller.pucks))
         self.Window.plot()
         self.Window.repaint()
@@ -256,7 +222,6 @@ class Algorithm():
                     inp = input("Press to do step...")
                 elif self.simulation_time != 'MAX':
                     time.sleep(self.simulation_time)
-                    
 
                 self.Controller.executeOneStep()
                 if PRINT_CONSOLE_GRID:
