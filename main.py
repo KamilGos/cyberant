@@ -26,7 +26,6 @@ SIMULATION_TIME = 'MAX'
 ROBOTS_NUM = 7
 PUCKS_NUM = 30
 
-
-if __name__ == "_main_":
-    # app = QApplication(sys.argv)
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
     al = Algorithm()
