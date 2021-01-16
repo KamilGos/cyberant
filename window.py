@@ -60,8 +60,8 @@ class Algorithm():
         self.Window.exitButton.clicked.connect(lambda: self.Window.close())
         self.Window.addPuckButton.clicked.connect(self.add_random_puck)
         self.Window.addChosenPuckButton.clicked.connect(self.add_certain_puck)
-        self.Window.puckRainButton.clicked.connect(self.puck_rain)
         self.Window.timeStepSlider.valueChanged.connect(self.change_step_time)
+        self.Window.puckRainButton.clicked.connect(self.puck_rain)
         self.Window.newPuckXEdit.setValidator(QIntValidator(3, self.Map.retGridSize()[1]))
         self.Window.newPuckYEdit.setValidator(QIntValidator(0, self.Map.retGridSize()[0]))
         self.Window.newPuckYEdit.setText(str(5))
@@ -69,6 +69,10 @@ class Algorithm():
         self.wrong_puck_msg = QMessageBox()
         self.wrong_puck_msg.setText("You can not add a puck there! ")
         self.simulation_time = 0
+        self.timer = QtCore.QTimer()
+        self.timer.setInterval(500)
+        self.timer.timeout.connect(self.puck_rain)
+        self.timecounter = 0
         # self.algorithm.new_puck_in_container.connect(self.update_progress)
         # self.pucksNumber.setProperty("value",len(self.algorithm.Controller.pucks))
         if AUTO_GENERATE:
@@ -161,16 +165,15 @@ class Algorithm():
         self.simulation_time = self.Window.timeStepSlider.value() / 2
 
     def puck_rain(self):
-        for i in range(PUCK_RAIN_NUM):
-            while True:
-                rand_pos = [randint(0, self.Map.retGridSize()[0] - 3), randint(1, self.Map.retGridSize()[1]) - 1]
-                if not self.Controller.checkIfPuckIsOnPosition(rand_pos) and rand_pos != self.Map.retContainerPos():
-                    self.Controller.addPuck(len(self.Controller.pucks), rand_pos)
-                    print("found free space")
-                    break
-        self.Window.pucksNumber.setProperty("value", len(self.Controller.pucks))
-        self.Window.plot()
-        self.Window.repaint()
+        if not self.timer.isActive():
+            self.timer.start()
+
+        if self.timecounter < 5:
+            self.add_random_puck()
+            self.timecounter = self.timecounter + 1
+        else:
+            self.timer.stop()
+            self.timecounter = 0
 
     def add_certain_puck(self):
         grid = self.Map.retGridSize()
@@ -254,6 +257,7 @@ class Algorithm():
                     inp = input("Press to do step...")
                 elif self.simulation_time != 'MAX':
                     time.sleep(self.simulation_time)
+                    
 
                 self.Controller.executeOneStep()
                 if PRINT_CONSOLE_GRID:

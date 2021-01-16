@@ -1,4 +1,8 @@
 # import HLC.HLC.controller as HLC.controller
+import sys
+
+from PyQt5.QtWidgets import QApplication
+
 import HLC.controller
 import environment
 import logging
@@ -23,6 +27,6 @@ ROBOTS_NUM = 7
 PUCKS_NUM = 30
 
 
-if __name__ == "__main__":
-
+if __name__ == "_main_":
+    # app = QApplication(sys.argv)
     al = Algorithm()
