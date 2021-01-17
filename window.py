@@ -41,16 +41,19 @@ MAPSIZE_Y = 10
 MAPSIZE_X = 8
 PUCK_RAIN_NUM = 5
 
+
 class Algorithm():
 
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         print("created alg")
 
         self.animation_running = False
-        self.Map = environment.Map(size=[MAPSIZE_Y, MAPSIZE_X])  # for debug with AUTO_GENERATE = False !
-        self.Controller = HLC.controller.Controller(gridSize=self.Map.retGridSize(), container_pos=self.Map.retContainerPos())
-        self.Window = Main_Window()
+        self.print_console_grid = PRINT_CONSOLE_GRID
 
+        self.Map = environment.Map(size=[MAPSIZE_Y, MAPSIZE_X])  # for debug with AUTO_GENERATE = False !
+        self.Controller = HLC.controller.Controller(gridSize=self.Map.retGridSize(),
+                                                    container_pos=self.Map.retContainerPos())
+        self.Window = Main_Window()
         self.Window.startButton.clicked.connect(self.start_clicked)
         self.Window.nextStepButton.clicked.connect(self.one_step)
         # self.startButton.clicked.connect(self.start_clicked)
@@ -70,6 +73,7 @@ class Algorithm():
         self.timer.setInterval(500)
         self.timer.timeout.connect(self.puck_rain)
         self.timecounter = 0
+        self.Window.consoleOutputCheckBox.stateChanged.connect(self.change_flags)
         # self.algorithm.new_puck_in_container.connect(self.update_progress)
         # self.pucksNumber.setProperty("value",len(self.algorithm.Controller.pucks))
 
@@ -83,7 +87,7 @@ class Algorithm():
                     break
             self.Controller.addPuck(puckId=id, init_pos=rand_pos)
 
-        if PRINT_CONSOLE_GRID:
+        if self.print_console_grid:
             print("... Initial map ...")
             self.Map.updateGrid(
                 robots=self.Controller.retRobots(),
@@ -107,6 +111,14 @@ class Algorithm():
             # self.run_animation()
         self.Window.pucksNumber.setProperty("value", len(self.Controller.retPucks()))
 
+    def change_flags(self):
+        if self.Window.consoleOutputCheckBox.isChecked():
+            LOG.disabled = False
+            self.print_console_grid = True
+        else:
+            LOG.disabled = True
+            self.print_console_grid = False
+
     def update_progress(self):
         print("updating progress bar")
         self.Window.progressBar.setValue(len(self.Controller.retContainerContent()))
@@ -128,11 +140,11 @@ class Algorithm():
         self.Window.plot()
         self.Window.repaint()
 
-
     def one_step(self):
         if self.animation_running == True:
             return
-        else:  self.update_progress()
+        else:
+            self.update_progress()
         idling_pucks, idling_pucks_ids = self.Controller.checkIdlingPucks()
         if idling_pucks is True:
             LOG.info("Idling Pucks ids:" + str(idling_pucks_ids))
@@ -168,8 +180,9 @@ class Algorithm():
             wykonywanie kroku
             '''
         self.Controller.updateAllocationMatrix()
-        if PRINT_CONSOLE_GRID:
+        if self.print_console_grid:
             self.Controller.showAllocationMatrix()
+            print(self.print_console_grid)
 
         if STEP_BY_STEP:
             inp = input("Press to do step...")
@@ -177,7 +190,7 @@ class Algorithm():
             time.sleep(self.simulation_time)
 
         self.Controller.executeOneStep()
-        if PRINT_CONSOLE_GRID:
+        if self.print_console_grid:
             self.Map.updateGrid(
                 robots=self.Controller.retRobots(),
                 pucks=self.Controller.retPucks(),
@@ -191,10 +204,8 @@ class Algorithm():
                 container=self.Controller.retContainerContent())
             self.Window.plot()
             self.app.processEvents()
-        if PRINT_CONSOLE_GRID:
+        if self.print_console_grid:
             print("-" * 50)
-
-
 
     def change_step_time(self):
         self.simulation_time = self.Window.timeStepSlider.value() / 2
@@ -295,7 +306,7 @@ class Algorithm():
                     wykonywanie kroku
                     '''
                 self.Controller.updateAllocationMatrix()
-                if PRINT_CONSOLE_GRID:
+                if self.print_console_grid:
                     self.Controller.showAllocationMatrix()
 
                 if STEP_BY_STEP:
@@ -304,7 +315,7 @@ class Algorithm():
                     time.sleep(self.simulation_time)
 
                 self.Controller.executeOneStep()
-                if PRINT_CONSOLE_GRID:
+                if self.print_console_grid:
                     self.Map.updateGrid(
                         robots=self.Controller.retRobots(),
                         pucks=self.Controller.retPucks(),
@@ -318,7 +329,7 @@ class Algorithm():
                         container=self.Controller.retContainerContent())
                     self.Window.plot()
                     self.app.processEvents()
-                if PRINT_CONSOLE_GRID:
+                if self.print_console_grid:
                     print("-" * 50)
 
 
@@ -447,6 +458,12 @@ class Main_Window(QMainWindow):
         self.RightLayout.addLayout(self.addPuckLayout)
         spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
         self.RightLayout.addItem(spacerItem)
+        self.horizontalLayout_5 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_5.setObjectName("horizontalLayout_5")
+        self.consoleOutputCheckBox = QtWidgets.QCheckBox(self.centralwidget)
+        self.consoleOutputCheckBox.setObjectName("consoleOutputCheckBox")
+        self.horizontalLayout_5.addWidget(self.consoleOutputCheckBox)
+        self.RightLayout.addLayout(self.horizontalLayout_5)
         self.startButton = QtWidgets.QPushButton(self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
@@ -513,11 +530,10 @@ class Main_Window(QMainWindow):
         self.addChosenPuckButton.setText(_translate("MainWindow", "Add puck for chosen field"))
         self.startButton.setText(_translate("MainWindow", "start/stop"))
         self.nextStepButton.setText(_translate("MainWindow", "next step "))
-
+        self.consoleOutputCheckBox.setText(_translate("MainWindow", "print output to console"))
 
     def plot(self):
         self.canvas.draw()
-
 
 
 if __name__ == "__main__":
