@@ -35,11 +35,18 @@ PRINT_CONSOLE_GRID = True
 STEP_BY_STEP = False
 # SIMULATION_TIME = 0.1  # sec per step
 SIMULATION_TIME = 'MAX'
-ROBOTS_NUM = 7
-PUCKS_NUM = 10
-MAPSIZE_Y = 10
-MAPSIZE_X = 8
+# ROBOTS_NUM = 7
+# PUCKS_NUM = 30
+# MAPSIZE_Y = 10
+# MAPSIZE_X = 8
 PUCK_RAIN_NUM = 5
+
+# ROBOTS_NUM = 7
+# PUCKS_NUM = 30
+MAX_MAPSIZE_Y = 20
+MAX_MAPSIZE_X = MAX_MAPSIZE_Y-2
+MIN_MAPSIZE_Y=5
+MIN_MAPSIZE_X = MIN_MAPSIZE_Y-2
 
 
 class Algorithm():
@@ -47,10 +54,22 @@ class Algorithm():
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         print("created alg")
 
+        self.robotsNumber = 8
+        self.pucksNumber = 16
+        self.mapSizeY = 10
+        self.mapSizeX = 8
+
+        self.Dialog = QtWidgets.QDialog()
+        self.sizeSelectDialog = SizeSelectDialog()
+        self.sizeSelectDialog.setupUi(self.Dialog)
+        self.sizeSelectDialog.buttonBox.accepted.connect(self.accept)
+        self.Dialog.exec()
+
+
         self.animation_running = False
         self.print_console_grid = PRINT_CONSOLE_GRID
 
-        self.Map = environment.Map(size=[MAPSIZE_Y, MAPSIZE_X])  # for debug with AUTO_GENERATE = False !
+        self.Map = environment.Map(size=[self.mapSizeY, self.mapSizeX])  # for debug with AUTO_GENERATE = False !
         self.Controller = HLC.controller.Controller(gridSize=self.Map.retGridSize(),
                                                     container_pos=self.Map.retContainerPos())
         self.Window = Main_Window()
@@ -76,10 +95,10 @@ class Algorithm():
         # self.algorithm.new_puck_in_container.connect(self.update_progress)
         # self.pucksNumber.setProperty("value",len(self.algorithm.Controller.pucks))
 
-        for id in range(ROBOTS_NUM):
+        for id in range(self.robotsNumber):
             self.Controller.addRobot(robotId=id)
 
-        for id in range(PUCKS_NUM):
+        for id in range(self.pucksNumber):
             while True:
                 rand_pos = [randint(0, self.Map.retGridSize()[0] - 3), randint(1, self.Map.retGridSize()[1]) - 1]
                 if not self.Controller.checkIfPuckIsOnPosition(rand_pos) and rand_pos != self.Map.retContainerPos():
@@ -328,6 +347,26 @@ class Algorithm():
                 if self.print_console_grid:
                     print("-" * 50)
 
+    def accept(self):
+
+        self.robotsNumber = self.sizeSelectDialog.robotsNumber.value()
+        self.pucksNumber = self.sizeSelectDialog.pucksNumber.value()
+        self.mapSizeX = self.sizeSelectDialog.mapSizeX.value()
+        self.mapSizeY = self.sizeSelectDialog.mapSizeY.value()
+
+        if(self.robotsNumber<self.mapSizeX and self.mapSizeX>=MIN_MAPSIZE_X and self.mapSizeY>=MIN_MAPSIZE_Y and
+           self.mapSizeY<=MAX_MAPSIZE_Y and self.mapSizeX<=MAX_MAPSIZE_X and self.robotsNumber>0):
+            self.Dialog.close()
+        else:
+            print("Error, incorrect values")
+            self.showError("incorrect values")
+
+    def showError(self, errorMsg):
+        msg = QMessageBox()
+        msg.setWindowTitle("Error")
+        msg.setText(errorMsg)
+        msg.exec_()
+
 
 class Main_Window(QMainWindow):
     def __init__(self):
@@ -514,7 +553,7 @@ class Main_Window(QMainWindow):
 
         self.startButton.setStyleSheet("background-color: green")
         self.leftLayout.addWidget(self.canvas)
-        self.robotsNumber.setProperty("value", ROBOTS_NUM)
+        self.robotsNumber.setProperty("value", self.robotsNumber)
         _translate = QtCore.QCoreApplication.translate
         self.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.exitButton.setText(_translate("MainWindow", "exit app"))
@@ -531,6 +570,89 @@ class Main_Window(QMainWindow):
 
     def plot(self):
         self.canvas.draw()
+
+class SizeSelectDialog(object):
+
+    def setupUi(self, Dialog):
+        Dialog.setObjectName("Dialog")
+        Dialog.resize(557, 261)
+        self.horizontalLayout = QtWidgets.QHBoxLayout(Dialog)
+        self.horizontalLayout.setObjectName("horizontalLayout")
+        self.verticalLayout_2 = QtWidgets.QVBoxLayout()
+        self.verticalLayout_2.setObjectName("verticalLayout_2")
+        self.verticalLayout_3 = QtWidgets.QVBoxLayout()
+        self.verticalLayout_3.setObjectName("verticalLayout_3")
+        self.label = QtWidgets.QLabel(Dialog)
+        self.label.setMinimumSize(QtCore.QSize(0, 30))
+        self.label.setTextFormat(QtCore.Qt.AutoText)
+        self.label.setScaledContents(False)
+        self.label.setAlignment(QtCore.Qt.AlignCenter)
+        self.label.setObjectName("label")
+        self.verticalLayout_3.addWidget(self.label)
+        self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_3.setObjectName("horizontalLayout_3")
+        self.label_2 = QtWidgets.QLabel(Dialog)
+        self.label_2.setMinimumSize(QtCore.QSize(170, 30))
+        self.label_2.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter)
+        self.label_2.setObjectName("label_2")
+        self.horizontalLayout_3.addWidget(self.label_2)
+        self.robotsNumber = QtWidgets.QSpinBox(Dialog)
+        self.robotsNumber.setMinimumSize(QtCore.QSize(60, 30))
+        self.robotsNumber.setProperty("value", 8)
+        self.robotsNumber.setObjectName("robotsNumber")
+        self.horizontalLayout_3.addWidget(self.robotsNumber)
+        self.label_3 = QtWidgets.QLabel(Dialog)
+        self.label_3.setMinimumSize(QtCore.QSize(170, 30))
+        self.label_3.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter)
+        self.label_3.setObjectName("label_3")
+        self.horizontalLayout_3.addWidget(self.label_3)
+        self.pucksNumber = QtWidgets.QSpinBox(Dialog)
+        self.pucksNumber.setMinimumSize(QtCore.QSize(60, 30))
+        self.pucksNumber.setProperty("value", 16)
+        self.pucksNumber.setObjectName("pucksNumber")
+        self.horizontalLayout_3.addWidget(self.pucksNumber)
+        self.verticalLayout_3.addLayout(self.horizontalLayout_3)
+        self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_2.setObjectName("horizontalLayout_2")
+        self.label_4 = QtWidgets.QLabel(Dialog)
+        self.label_4.setMinimumSize(QtCore.QSize(170, 30))
+        self.label_4.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter)
+        self.label_4.setObjectName("label_4")
+        self.horizontalLayout_2.addWidget(self.label_4)
+        self.mapSizeX = QtWidgets.QSpinBox(Dialog)
+        self.mapSizeX.setMinimumSize(QtCore.QSize(60, 30))
+        self.mapSizeX.setProperty("value", 10)
+        self.mapSizeX.setObjectName("mapSizeX")
+        self.horizontalLayout_2.addWidget(self.mapSizeX)
+        self.label_5 = QtWidgets.QLabel(Dialog)
+        self.label_5.setMinimumSize(QtCore.QSize(170, 30))
+        self.label_5.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter)
+        self.label_5.setObjectName("label_5")
+        self.horizontalLayout_2.addWidget(self.label_5)
+        self.mapSizeY = QtWidgets.QSpinBox(Dialog)
+        self.mapSizeY.setMinimumSize(QtCore.QSize(60, 30))
+        self.mapSizeY.setProperty("value", 10)
+        self.mapSizeY.setObjectName("mapSizeY")
+        self.horizontalLayout_2.addWidget(self.mapSizeY)
+        self.verticalLayout_3.addLayout(self.horizontalLayout_2)
+        self.verticalLayout_2.addLayout(self.verticalLayout_3)
+
+        self.buttonBox = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok)
+
+        self.verticalLayout_2.addWidget(self.buttonBox)
+        self.horizontalLayout.addLayout(self.verticalLayout_2)
+
+        self.retranslateUi(Dialog)
+        QtCore.QMetaObject.connectSlotsByName(Dialog)
+
+    def retranslateUi(self, Dialog):
+        _translate = QtCore.QCoreApplication.translate
+        Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
+        self.label.setText(_translate("Dialog", "Chose simulation parameters"))
+        self.label_2.setText(_translate("Dialog", "Amount of Robots"))
+        self.label_3.setText(_translate("Dialog", "Initial amount of Pucks"))
+        self.label_4.setText(_translate("Dialog", "Map size X"))
+        self.label_5.setText(_translate("Dialog", "Map size Y"))
 
 
 if __name__ == "__main__":
