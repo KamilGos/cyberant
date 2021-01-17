@@ -161,9 +161,6 @@ class Algorithm():
             else:
                 self.wrong_puck_msg.exec()
         else:
-            print("error")
-            # no_cord_error = QMessageBox(text="You have to choose coordinates first! ", title="ERROR", icon=QMessageBox.Warning)
-            # ret = no_cord_error.exec()
             msg = QMessageBox(icon=QMessageBox.Warning, text="You have to choose coordinates first!")
             msg.setInformativeText("Choose X and Y coordinate")
             msg.setWindowTitle("Error")
