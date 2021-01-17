@@ -56,7 +56,6 @@ class Algorithm():
         self.Window = Main_Window()
         self.Window.startButton.clicked.connect(self.start_clicked)
         self.Window.nextStepButton.clicked.connect(self.one_step)
-        # self.startButton.clicked.connect(self.start_clicked)
         self.Window.exitButton.clicked.connect(lambda: self.Window.close())
         self.Window.addPuckButton.clicked.connect(self.add_random_puck)
         self.Window.addChosenPuckButton.clicked.connect(self.add_certain_puck)
@@ -513,6 +512,7 @@ class Main_Window(QMainWindow):
         self.statusbar = QtWidgets.QStatusBar(self)
         self.statusbar.setObjectName("statusbar")
         self.setStatusBar(self.statusbar)
+        self.consoleOutputCheckBox.setChecked(True)
         ########## END ##########
 
         self.startButton.setStyleSheet("background-color: green")
