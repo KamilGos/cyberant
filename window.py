@@ -11,7 +11,7 @@ import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QValidator, QIntValidator
-from PyQt5.QtWidgets import QWidget, QApplication, QMainWindow, QDialog, QMessageBox
+from PyQt5.QtWidgets import QWidget, QApplication, QMainWindow, QDialog, QMessageBox, QDialogButtonBox
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -36,27 +36,49 @@ AUTO_GENERATE = True
 STEP_BY_STEP = False
 # SIMULATION_TIME = 0.1  # sec per step
 SIMULATION_TIME = 'MAX'
-ROBOTS_NUM = 7
-PUCKS_NUM = 30
-MAPSIZE_Y = 10
-MAPSIZE_X = 8
+# ROBOTS_NUM = 7
+# PUCKS_NUM = 30
+# MAPSIZE_Y = 10
+# MAPSIZE_X = 8
 PUCK_RAIN_NUM = 5
 
+# ROBOTS_NUM = 7
+# PUCKS_NUM = 30
+MAX_MAPSIZE_Y = 20
+MAX_MAPSIZE_X = MAX_MAPSIZE_Y-2
+MIN_MAPSIZE_Y=5
+MIN_MAPSIZE_X = MIN_MAPSIZE_Y-2
 
 # test
+
 
 class Algorithm():
 
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         print("created alg")
+        
+        self.robotsNumber = 7
+        self.pucksNumber = 10
+        self.mapSizeY = 10
+        self.mapSizeX = 8
 
+        self.Dialog = QtWidgets.QDialog()
+        self.sizeSelectDialog = SizeSelectDialog()
+        self.sizeSelectDialog.setupUi(self.Dialog)
+        self.sizeSelectDialog.buttonBox.accepted.connect(self.accept)
+        self.Dialog.exec()
+        #self.Dialog.close()
+
+        
         self.animation_running = False
-        self.Map = environment.Map(size=[MAPSIZE_Y, MAPSIZE_X])  # for debug with AUTO_GENERATE = False !
+        self.Map = environment.Map(size=[self.mapSizeY, self.mapSizeX])  # for debug with AUTO_GENERATE = False !
         self.Controller = HLC.controller.Controller(gridSize=self.Map.retGridSize())
-        self.Window = Main_Window()
 
-        self.Window.startButton.clicked.connect(self.start_clicked)
-        # self.startButton.clicked.connect(self.start_clicked)
+
+
+
+        self.Window = Main_Window()
+        self.Window.startButton.clicked.connect(self.start_clicked) #w momencie klikniecia wywolaj fkcje w nawiasie
         self.Window.exitButton.clicked.connect(lambda: self.Window.close())
         self.Window.addPuckButton.clicked.connect(self.add_random_puck)
         self.Window.addChosenPuckButton.clicked.connect(self.add_certain_puck)
@@ -76,11 +98,11 @@ class Algorithm():
         # self.algorithm.new_puck_in_container.connect(self.update_progress)
         # self.pucksNumber.setProperty("value",len(self.algorithm.Controller.pucks))
         if AUTO_GENERATE:
-            for id in range(ROBOTS_NUM):
+            for id in range(self.robotsNumber):
                 self.Controller.addRobot(robotId=id)
                 # time.sleep(0.1)
 
-            for id in range(PUCKS_NUM):
+            for id in range(self.pucksNumber):
                 while True:
                     rand_pos = [randint(0, self.Map.retGridSize()[0] - 3), randint(1, self.Map.retGridSize()[1]) - 1]
                     if not self.Controller.checkIfPuckIsOnPosition(rand_pos) and rand_pos != self.Map.retContainerPos():
@@ -147,7 +169,7 @@ class Algorithm():
         self.Window.pucksNumber.setProperty("value", len(self.Controller.retPucks()))
 
     def update_progress(self):
-        print("updating progress bar")
+    #    F("updating progress bar")
         self.Window.progressBar.setValue(len(self.Controller.retContainerContent()))
 
     def add_random_puck(self):
@@ -276,6 +298,29 @@ class Algorithm():
                     self.app.processEvents()
                 if PRINT_CONSOLE_GRID:
                     print("-" * 50)
+    def accept(self):
+
+        self.robotsNumber = self.sizeSelectDialog.robotsNumber.value()
+        self.pucksNumber = self.sizeSelectDialog.pucksNumber.value()
+        self.mapSizeX = self.sizeSelectDialog.mapSizeX.value()
+        self.mapSizeY = self.sizeSelectDialog.mapSizeY.value()
+
+        if(self.robotsNumber<self.mapSizeX and self.mapSizeX>=MIN_MAPSIZE_X and self.mapSizeY>=MIN_MAPSIZE_Y and
+           self.mapSizeY<=MAX_MAPSIZE_Y and self.mapSizeX<=MAX_MAPSIZE_X and self.robotsNumber>0):
+            self.Dialog.close()
+        else:
+            print("Error, incorrect values")
+            self.showError("incorrect values")
+
+    def showError(self, errorMsg):
+        msg = QMessageBox()
+        msg.setWindowTitle("Error")
+        msg.setText(errorMsg)
+        msg.exec_()
+
+
+
+
 
 
 class Main_Window(QMainWindow):
@@ -336,7 +381,6 @@ class Main_Window(QMainWindow):
         self.robotsNumber.setObjectName("robotsNumber")
         self.horizontalLayout_3.addWidget(self.robotsNumber)
         self.pucksNumber = QtWidgets.QLCDNumber(self.centralwidget)
-        self.pucksNumber.setProperty("value", PUCKS_NUM)
         self.pucksNumber.setObjectName("pucksNumber")
         self.horizontalLayout_3.addWidget(self.pucksNumber)
         self.RightLayout.addLayout(self.horizontalLayout_3)
@@ -458,7 +502,6 @@ class Main_Window(QMainWindow):
 
         self.startButton.setStyleSheet("background-color: green")
         self.leftLayout.addWidget(self.canvas)
-        self.robotsNumber.setProperty("value", ROBOTS_NUM)
         _translate = QtCore.QCoreApplication.translate
         self.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.exitButton.setText(_translate("MainWindow", "exit app"))
@@ -471,188 +514,97 @@ class Main_Window(QMainWindow):
         self.addChosenPuckButton.setText(_translate("MainWindow", "Add puck for chosen field"))
         self.startButton.setText(_translate("MainWindow", "start/stop"))
 
-        # self.retranslateUi(MainWindow)
-
-    # def update_progress(self,number_of_pucks):
-    #     self.progressBar.setValue(number_of_pucks)
 
     def plot(self):
         self.canvas.draw()
 
-    # def add_puck(self):
-    #     while True:
-    #         print("searching")
-    #         y_pos = random.randint(3, 7)
-    #         x_pos = random.randint(0, 7)
-    #         print("y: "+ str(y_pos) + " x: "+ str(x_pos))
-    #         if not self.algorithm.Controller.checkIfPuckIsOnPosition([y_pos, x_pos]):
-    #             self.algorithm.Controller.addPuck(len(self.algorithm.Controller.pucks), init_pos=[y_pos, x_pos])
-    #             print("found free space")
-    #             break
-    #     self.pucksNumber.setProperty("value", len(self.algorithm.Controller.pucks))
+class SizeSelectDialog(object):
+
+    def setupUi(self, Dialog):
+        Dialog.setObjectName("Dialog")
+        Dialog.resize(557, 261)
+        self.horizontalLayout = QtWidgets.QHBoxLayout(Dialog)
+        self.horizontalLayout.setObjectName("horizontalLayout")
+        self.verticalLayout_2 = QtWidgets.QVBoxLayout()
+        self.verticalLayout_2.setObjectName("verticalLayout_2")
+        self.verticalLayout_3 = QtWidgets.QVBoxLayout()
+        self.verticalLayout_3.setObjectName("verticalLayout_3")
+        self.label = QtWidgets.QLabel(Dialog)
+        self.label.setMinimumSize(QtCore.QSize(0, 30))
+        self.label.setTextFormat(QtCore.Qt.AutoText)
+        self.label.setScaledContents(False)
+        self.label.setAlignment(QtCore.Qt.AlignCenter)
+        self.label.setObjectName("label")
+        self.verticalLayout_3.addWidget(self.label)
+        self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_3.setObjectName("horizontalLayout_3")
+        self.label_2 = QtWidgets.QLabel(Dialog)
+        self.label_2.setMinimumSize(QtCore.QSize(170, 30))
+        self.label_2.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter)
+        self.label_2.setObjectName("label_2")
+        self.horizontalLayout_3.addWidget(self.label_2)
+        self.robotsNumber = QtWidgets.QSpinBox(Dialog)
+        self.robotsNumber.setMinimumSize(QtCore.QSize(60, 30))
+        self.robotsNumber.setProperty("value", 8)
+        self.robotsNumber.setObjectName("robotsNumber")
+        self.horizontalLayout_3.addWidget(self.robotsNumber)
+        self.label_3 = QtWidgets.QLabel(Dialog)
+        self.label_3.setMinimumSize(QtCore.QSize(170, 30))
+        self.label_3.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter)
+        self.label_3.setObjectName("label_3")
+        self.horizontalLayout_3.addWidget(self.label_3)
+        self.pucksNumber = QtWidgets.QSpinBox(Dialog)
+        self.pucksNumber.setMinimumSize(QtCore.QSize(60, 30))
+        self.pucksNumber.setProperty("value", 16)
+        self.pucksNumber.setObjectName("pucksNumber")
+        self.horizontalLayout_3.addWidget(self.pucksNumber)
+        self.verticalLayout_3.addLayout(self.horizontalLayout_3)
+        self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_2.setObjectName("horizontalLayout_2")
+        self.label_4 = QtWidgets.QLabel(Dialog)
+        self.label_4.setMinimumSize(QtCore.QSize(170, 30))
+        self.label_4.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter)
+        self.label_4.setObjectName("label_4")
+        self.horizontalLayout_2.addWidget(self.label_4)
+        self.mapSizeX = QtWidgets.QSpinBox(Dialog)
+        self.mapSizeX.setMinimumSize(QtCore.QSize(60, 30))
+        self.mapSizeX.setProperty("value", 10)
+        self.mapSizeX.setObjectName("mapSizeX")
+        self.horizontalLayout_2.addWidget(self.mapSizeX)
+        self.label_5 = QtWidgets.QLabel(Dialog)
+        self.label_5.setMinimumSize(QtCore.QSize(170, 30))
+        self.label_5.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter)
+        self.label_5.setObjectName("label_5")
+        self.horizontalLayout_2.addWidget(self.label_5)
+        self.mapSizeY = QtWidgets.QSpinBox(Dialog)
+        self.mapSizeY.setMinimumSize(QtCore.QSize(60, 30))
+        self.mapSizeY.setProperty("value", 10)
+        self.mapSizeY.setObjectName("mapSizeY")
+        self.horizontalLayout_2.addWidget(self.mapSizeY)
+        self.verticalLayout_3.addLayout(self.horizontalLayout_2)
+        self.verticalLayout_2.addLayout(self.verticalLayout_3)
+
+        self.buttonBox = QtWidgets.QDialogButtonBox( QtWidgets.QDialogButtonBox.Ok)
 
 
-#
-#
-# class Ui_MainWindow(object):
-#     def __init__(self):
-#         self.figure = plt.gcf()
-#     def setupUi(self, MainWindow):
-#         MainWindow.setObjectName("MainWindow")
-#         MainWindow.resize(1405, 950)
-#         self.animation_started = False
-#
-#
-#         # this is the Canvas Widget that
-#         # displays the 'figure'it takes the
-#         # 'figure' instance as a parameter to __init__
-#         self.canvas = FigureCanvas(self.figure)
-#
-#         ############### FROM DESIGNER #################
-#         self.centralwidget = QtWidgets.QWidget(MainWindow)
-#         self.centralwidget.setObjectName("centralwidget")
-#         self.horizontalLayout_2 = QtWidgets.QHBoxLayout(self.centralwidget)
-#         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
-#         self.horizontalLayout = QtWidgets.QHBoxLayout()
-#         self.horizontalLayout.setObjectName("horizontalLayout")
-#         self.leftLayout = QtWidgets.QVBoxLayout()
-#         self.leftLayout.setObjectName("leftLayout")
-#         self.widget = QtWidgets.QWidget(self.centralwidget)
-#         self.widget.setObjectName("widget")
-#         self.leftLayout.addWidget(self.widget)
-#         self.horizontalLayout.addLayout(self.leftLayout)
-#         self.RightLayout = QtWidgets.QVBoxLayout()
-#         self.RightLayout.setObjectName("RightLayout")
-#         self.exitButton = QtWidgets.QPushButton(self.centralwidget)
-#         self.exitButton.setObjectName("exitButton")
-#         self.RightLayout.addWidget(self.exitButton)
-#         self.horizontalLayout_4 = QtWidgets.QHBoxLayout()
-#         self.horizontalLayout_4.setObjectName("horizontalLayout_4")
-#         self.robotsNumberLabel = QtWidgets.QLabel(self.centralwidget)
-#         font = QtGui.QFont()
-#         font.setFamily("Microsoft YaHei")
-#         font.setPointSize(14)
-#         font.setBold(True)
-#         font.setWeight(75)
-#         self.robotsNumberLabel.setFont(font)
-#         self.robotsNumberLabel.setObjectName("robotsNumberLabel")
-#         self.horizontalLayout_4.addWidget(self.robotsNumberLabel)
-#         self.pucksNumberLabel = QtWidgets.QLabel(self.centralwidget)
-#         font = QtGui.QFont()
-#         font.setFamily("Microsoft YaHei")
-#         font.setPointSize(14)
-#         font.setBold(True)
-#         font.setWeight(75)
-#         self.pucksNumberLabel.setFont(font)
-#         self.pucksNumberLabel.setObjectName("pucksNumberLabel")
-#         self.horizontalLayout_4.addWidget(self.pucksNumberLabel)
-#         self.RightLayout.addLayout(self.horizontalLayout_4)
-#         self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
-#         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
-#         self.robotsNumber = QtWidgets.QLCDNumber(self.centralwidget)
-#         self.robotsNumber.setObjectName("robotsNumber")
-#         self.horizontalLayout_3.addWidget(self.robotsNumber)
-#         self.pucksNumber = QtWidgets.QLCDNumber(self.centralwidget)
-#         self.pucksNumber.setProperty("value", PUCKS_NUM)
-#         self.pucksNumber.setObjectName("pucksNumber")
-#         self.horizontalLayout_3.addWidget(self.pucksNumber)
-#         self.RightLayout.addLayout(self.horizontalLayout_3)
-#         self.addPuckButton = QtWidgets.QPushButton(self.centralwidget)
-#         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
-#         sizePolicy.setHorizontalStretch(0)
-#         sizePolicy.setVerticalStretch(0)
-#         sizePolicy.setHeightForWidth(self.addPuckButton.sizePolicy().hasHeightForWidth())
-#         self.addPuckButton.setSizePolicy(sizePolicy)
-#         self.addPuckButton.setObjectName("addPuckButton")
-#         self.RightLayout.addWidget(self.addPuckButton)
-#         spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
-#         self.RightLayout.addItem(spacerItem)
-#         self.startButton = QtWidgets.QPushButton(self.centralwidget)
-#         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
-#         sizePolicy.setHorizontalStretch(0)
-#         sizePolicy.setVerticalStretch(0)
-#         sizePolicy.setHeightForWidth(self.startButton.sizePolicy().hasHeightForWidth())
-#         self.startButton.setSizePolicy(sizePolicy)
-#         self.startButton.setObjectName("startButton")
-#         self.RightLayout.addWidget(self.startButton)
-#         spacerItem1 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
-#         self.RightLayout.addItem(spacerItem1)
-#         self.progressBar = QtWidgets.QProgressBar(self.centralwidget)
-#         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
-#         sizePolicy.setHorizontalStretch(0)
-#         sizePolicy.setVerticalStretch(0)
-#         sizePolicy.setHeightForWidth(self.progressBar.sizePolicy().hasHeightForWidth())
-#         self.progressBar.setSizePolicy(sizePolicy)
-#         self.progressBar.setProperty("value", 0)
-#         self.progressBar.setObjectName("progressBar")
-#         self.progressBar.setStyleSheet("#BlueProgressBar {\n"
-#                                        "    border: 2px solid #2196F3;\n"
-#                                        "    border-radius: 5px;\n"
-#                                        "    background-color: #E0E0E0;\n"
-#                                        "    color:blue;\n"
-#                                        "}")
-#         self.RightLayout.addWidget(self.progressBar)
-#         self.horizontalLayout.addLayout(self.RightLayout)
-#         self.horizontalLayout_2.addLayout(self.horizontalLayout)
-#         MainWindow.setCentralWidget(self.centralwidget)
-#         self.menubar = QtWidgets.QMenuBar(MainWindow)
-#         self.menubar.setGeometry(QtCore.QRect(0, 0, 815, 21))
-#         self.menubar.setObjectName("menubar")
-#         MainWindow.setMenuBar(self.menubar)
-#         self.statusbar = QtWidgets.QStatusBar(MainWindow)
-#         self.statusbar.setObjectName("statusbar")
-#         MainWindow.setStatusBar(self.statusbar)
-#
-#         ########## END ##########
-#
-#         self.startButton.setStyleSheet("background-color: green")
-#         self.leftLayout.addWidget(self.canvas)
-#         # self.startButton.clicked.connect(self.start_clicked)
-#         # # self.exitButton.clicked.connect(lambda: self.close())
-#         # self.addPuckButton.clicked.connect(self.add_puck)
-#         # self.algorithm.new_puck_in_container.connect(self.update_progress)
-#         # self.pucksNumber.setProperty("value",len(self.algorithm.Controller.pucks))
-#         self.robotsNumber.setProperty("value",ROBOTS_NUM)
-#         self.retranslateUi(MainWindow)
-#         QtCore.QMetaObject.connectSlotsByName(MainWindow)
-#
-#     def retranslateUi(self, MainWindow):
-#         _translate = QtCore.QCoreApplication.translate
-#         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-#         self.exitButton.setText(_translate("MainWindow", "exit app"))
-#         self.robotsNumberLabel.setText(_translate("MainWindow", "Number of robots:"))
-#         self.pucksNumberLabel.setText(_translate("MainWindow", "Number of pucks:"))
-#         self.addPuckButton.setText(_translate("MainWindow", "Add random puck"))
-#         self.startButton.setText(_translate("MainWindow", "start/stop"))
-#
-#     def update_progress(self,number_of_pucks):
-#         self.progressBar.setValue(number_of_pucks)
-#
-#     def plot(self):
-#             self.canvas.draw()
-#
-#     def add_puck(self):
-#         while True:
-#             print("searching")
-#             y_pos = random.randint(3, 8)
-#             x_pos = random.randint(0, 7)
-#             print("y: "+ str(y_pos) + " x: "+ str(x_pos))
-#             if not self.algorithm.Controller.checkIfPuckIsOnPosition([y_pos, x_pos]):
-#                 self.algorithm.Controller.addPuck(len(self.algorithm.Controller.pucks), init_pos=[y_pos, x_pos])
-#                 print("found free space")
-#                 break
-#         self.pucksNumber.setProperty("value", len(self.algorithm.Controller.pucks))
-#
-#
+        self.verticalLayout_2.addWidget(self.buttonBox)
+        self.horizontalLayout.addLayout(self.verticalLayout_2)
+
+        self.retranslateUi(Dialog)
+        QtCore.QMetaObject.connectSlotsByName(Dialog)
+
+    def retranslateUi(self, Dialog):
+        _translate = QtCore.QCoreApplication.translate
+        Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
+        self.label.setText(_translate("Dialog", "Chose simulation parameters"))
+        self.label_2.setText(_translate("Dialog", "Amount of Robots"))
+        self.label_3.setText(_translate("Dialog", "Initial amount of Pucks"))
+        self.label_4.setText(_translate("Dialog", "Map size X"))
+        self.label_5.setText(_translate("Dialog", "Map size Y"))
+
+
 
 
 if __name__ == "__main__":
     import sys
-
-    # app = QtWidgets.QApplication(sys.argv)
-    # MainWindow = QtWidgets.QMainWindow()
-    # ui = Ui_MainWindow()
-    # ui.setupUi(MainWindow)
-    # MainWindow.show()
-    # sys.exit(app.exec_())
     alg = Algorithm()
