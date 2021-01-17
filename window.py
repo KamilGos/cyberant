@@ -119,7 +119,7 @@ class Algorithm():
             self.print_console_grid = False
 
     def update_progress(self):
-        print("updating progress bar")
+        # print("updating progress bar")
         self.Window.progressBar.setValue(len(self.Controller.retContainerContent()))
 
     def add_random_puck(self):
@@ -509,7 +509,7 @@ class Main_Window(QMainWindow):
         self.statusbar = QtWidgets.QStatusBar(self)
         self.statusbar.setObjectName("statusbar")
         self.setStatusBar(self.statusbar)
-        self.consoleOutputCheckBox.setChecked(True)
+        self.consoleOutputCheckBox.setChecked(False)
         ########## END ##########
 
         self.startButton.setStyleSheet("background-color: green")
