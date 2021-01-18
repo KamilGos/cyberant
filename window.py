@@ -154,7 +154,7 @@ class Algorithm():
             container=self.Controller.retContainerContent())
         self.Window.plot()
         self.app.processEvents()
-        self.Window.pucksNumber.setProperty("value", len(self.Controller.pucks))
+        self.Window.pucksNumberDisp.setProperty("value", len(self.Controller.pucks))
         self.Window.plot()
         self.Window.repaint()
 
@@ -253,7 +253,7 @@ class Algorithm():
                     container=self.Controller.retContainerContent())
                 self.Window.plot()
                 self.Window.plot()
-                self.Window.pucksNumber.setProperty("value", len(self.Controller.pucks))
+                self.Window.pucksNumberDisp.setProperty("value", len(self.Controller.pucks))
                 self.Window.newPuckXEdit.clear()
                 self.Window.newPuckYEdit.clear()
             else:
