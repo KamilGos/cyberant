@@ -72,7 +72,7 @@ class Algorithm():
         self.Map = environment.Map(size=[self.mapSizeY, self.mapSizeX])  # for debug with AUTO_GENERATE = False !
         self.Controller = HLC.controller.Controller(gridSize=self.Map.retGridSize(),
                                                     container_pos=self.Map.retContainerPos())
-        self.Window = Main_Window()
+        self.Window = Main_Window(self.robotsNumber, self.pucksNumber)
         self.Window.startButton.clicked.connect(self.start_clicked)
         self.Window.nextStepButton.clicked.connect(self.one_step)
         self.Window.exitButton.clicked.connect(lambda: self.Window.close())
@@ -369,8 +369,10 @@ class Algorithm():
 
 
 class Main_Window(QMainWindow):
-    def __init__(self):
+    def __init__(self, robotsNumber, pucksNumber):
         super().__init__()
+        self.robotsNumber=robotsNumber
+        self.pucksNumber = pucksNumber
         self.setObjectName("MainWindow")
         self.resize(1405, 950)
         self.animation_started = False
@@ -422,13 +424,13 @@ class Main_Window(QMainWindow):
         self.RightLayout.addLayout(self.horizontalLayout_4)
         self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
-        self.robotsNumber = QtWidgets.QLCDNumber(self.centralwidget)
-        self.robotsNumber.setObjectName("robotsNumber")
-        self.horizontalLayout_3.addWidget(self.robotsNumber)
-        self.pucksNumber = QtWidgets.QLCDNumber(self.centralwidget)
-        self.pucksNumber.setProperty("value", 10.0)
-        self.pucksNumber.setObjectName("pucksNumber")
-        self.horizontalLayout_3.addWidget(self.pucksNumber)
+        self.robotsNumberDisp = QtWidgets.QLCDNumber(self.centralwidget)
+        self.robotsNumberDisp.setObjectName("robotsNumber")
+        self.horizontalLayout_3.addWidget(self.robotsNumberDisp)
+        self.pucksNumberDisp = QtWidgets.QLCDNumber(self.centralwidget)
+        self.pucksNumberDisp.setProperty("value", self.pucksNumber)
+        self.pucksNumberDisp.setObjectName("pucksNumber")
+        self.horizontalLayout_3.addWidget(self.pucksNumberDisp)
         self.RightLayout.addLayout(self.horizontalLayout_3)
         self.addPuckButton = QtWidgets.QPushButton(self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
@@ -553,7 +555,7 @@ class Main_Window(QMainWindow):
 
         self.startButton.setStyleSheet("background-color: green")
         self.leftLayout.addWidget(self.canvas)
-        self.robotsNumber.setProperty("value", self.robotsNumber)
+        self.robotsNumberDisp.setProperty("value", self.robotsNumber)
         _translate = QtCore.QCoreApplication.translate
         self.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.exitButton.setText(_translate("MainWindow", "exit app"))
