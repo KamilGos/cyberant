@@ -44,9 +44,9 @@ PUCK_RAIN_NUM = 5
 # ROBOTS_NUM = 7
 # PUCKS_NUM = 30
 MAX_MAPSIZE_Y = 20
-MAX_MAPSIZE_X = MAX_MAPSIZE_Y-2
+MAX_MAPSIZE_X = 20
 MIN_MAPSIZE_Y=5
-MIN_MAPSIZE_X = MIN_MAPSIZE_Y-2
+MIN_MAPSIZE_X = 3
 
 
 class Algorithm():
@@ -62,8 +62,10 @@ class Algorithm():
         self.Dialog = QtWidgets.QDialog()
         self.sizeSelectDialog = SizeSelectDialog()
         self.sizeSelectDialog.setupUi(self.Dialog)
+        self.settingsAccepted = False
         self.sizeSelectDialog.buttonBox.accepted.connect(self.accept)
         self.Dialog.exec()
+        if(not self.settingsAccepted): sys.exit()
 
 
         self.animation_running = False
@@ -355,11 +357,15 @@ class Algorithm():
         self.mapSizeY = self.sizeSelectDialog.mapSizeY.value()
 
         if(self.robotsNumber<self.mapSizeX and self.mapSizeX>=MIN_MAPSIZE_X and self.mapSizeY>=MIN_MAPSIZE_Y and
-           self.mapSizeY<=MAX_MAPSIZE_Y and self.mapSizeX<=MAX_MAPSIZE_X and self.robotsNumber>0):
+           self.mapSizeY<=MAX_MAPSIZE_Y and self.mapSizeX<=MAX_MAPSIZE_X and self.robotsNumber>0 and self.pucksNumber<=MAX_MAPSIZE_Y*(MAX_MAPSIZE_X-2)):
             self.Dialog.close()
+            self.settingsAccepted = True
         else:
             print("Error, incorrect values")
             self.showError("incorrect values")
+
+
+
 
     def showError(self, errorMsg):
         msg = QMessageBox()
