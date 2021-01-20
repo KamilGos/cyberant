@@ -650,11 +650,16 @@ class SizeSelectDialog(object):
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
         Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
-        self.label.setText(_translate("Dialog", "Chose simulation parameters"))
+        self.label.setText(_translate("Dialog", "Welcome to CyberAnt \n Please select simulation parameters"))
+        self.label.setFont(QtGui.QFont('Arial', 16, QtGui.QFont.Bold))
         self.label_2.setText(_translate("Dialog", "Amount of Robots"))
+        self.label_2.setFont(QtGui.QFont('Arial', 10))
         self.label_3.setText(_translate("Dialog", "Initial amount of Pucks"))
+        self.label_3.setFont(QtGui.QFont('Arial', 10))
         self.label_4.setText(_translate("Dialog", "Map size X"))
+        self.label_4.setFont(QtGui.QFont('Arial', 10))
         self.label_5.setText(_translate("Dialog", "Map size Y"))
+        self.label_5.setFont(QtGui.QFont('Arial', 10))
 
 
 if __name__ == "__main__":
