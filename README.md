@@ -62,9 +62,10 @@ The right side of the window is reserved for controls and statistics. From the t
 
 # Tests
 In order to check reliability of the algorithm the simulation needed some testing. In that purpose, random number generator provided following parameters:
-   * Map height $=$ random number from range (10,30)
-   * Map width $=$ random number from range (10,Map height)
-   * Number of Pucks $=$ Map height x Map width / 4
-   * Number of Robots $=$ Map width - 2
+   * Map height = random number from range (10,30)
+   * Map width = random number from range (10,Map height)
+   * Number of Pucks = Map height x Map width / 4
+   * Number of Robots = Map width - 2
 The reliability condition of the algorithm is met if robots collected all of the pucks and successfully put them into the container, meaning that no system blockade emerged.
-All tests were successful. The developed system handles the collection of pucks without any problems. Algorithms implemented to avoid deadlocks work perfectly. During the tests, no combinations of robots and pucks were found that would block the system.
+<br/><br/>
+**All tests were successful.** The developed system handles the collection of pucks without any problems. Algorithms implemented to avoid deadlocks work perfectly. During the tests, no combinations of robots and pucks were found that would block the system.
