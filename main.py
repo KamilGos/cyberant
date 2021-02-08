@@ -1,11 +1,7 @@
-# import HLC.HLC.controller as HLC.controller
-import HLC.controller
-import environment
+import controller
 import logging
-import time
-from random import randint
 from window import Algorithm
-from PyQt5.QtWidgets import QApplication, QWidget
+from PyQt5.QtWidgets import QApplication
 import sys
 
 LOG_FORMAT = '%(levelname)-10s %(name)-20s %(funcName)-20s  %(message)s'

@@ -1,11 +1,9 @@
-from HLC.path_finder import PathFinder
+from path_finder import PathFinder
 from robot import Robot, RobotState
 from puck import Puck, PuckState
-import enum
 import numpy as np
 import logging
 from main import LOGGER_DISABLED
-import time
 
 LOG_FORMAT = '%(levelname)-10s %(name)-20s %(funcName)-20s  %(message)s'
 logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
