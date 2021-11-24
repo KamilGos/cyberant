@@ -1,6 +1,5 @@
-import controller
 import logging
-from window import Algorithm
+from sources.window import Algorithm
 from PyQt5.QtWidgets import QApplication
 import sys
 

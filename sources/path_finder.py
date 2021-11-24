@@ -1,4 +1,4 @@
-from collections import defaultdict, deque
+from collections import defaultdict
 from heapq import *
 import logging
 import re

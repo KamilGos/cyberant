@@ -1,15 +1,12 @@
-from path_finder import PathFinder
-from robot import Robot, RobotState
-from puck import Puck, PuckState
+from sources.path_finder import PathFinder
+from sources.robot import Robot, RobotState
+from sources.puck import Puck, PuckState
 import numpy as np
 import logging
-from main import LOGGER_DISABLED
 
 LOG_FORMAT = '%(levelname)-10s %(name)-20s %(funcName)-20s  %(message)s'
 logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
 LOG = logging.getLogger(__name__)
-LOG.disabled = LOGGER_DISABLED
-
 
 class Controller(PathFinder, Robot, Puck):
     def __init__(self, gridSize, container_pos):

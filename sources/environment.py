@@ -1,8 +1,6 @@
 import numpy as np
 from tabulate import tabulate
 from matplotlib import pyplot as plt
-from matplotlib import colors
-from matplotlib import patches
 import logging
 
 logging.getLogger('matplotlib.font_manager').disabled = True

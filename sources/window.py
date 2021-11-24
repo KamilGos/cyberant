@@ -2,8 +2,8 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtGui import QIntValidator
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-import controller
-import environment
+import sources.controller as controller
+import sources.environment as environment
 import logging
 import time
 import sys
@@ -21,16 +21,9 @@ PLOT_FIGURE = True
 PRINT_CONSOLE_GRID = True
 
 STEP_BY_STEP = False
-# SIMULATION_TIME = 0.1  # sec per step
 SIMULATION_TIME = 'MAX'
-# ROBOTS_NUM = 7
-# PUCKS_NUM = 30
-# MAPSIZE_Y = 10
-# MAPSIZE_X = 8
 PUCK_RAIN_NUM = 5
 
-# ROBOTS_NUM = 7
-# PUCKS_NUM = 30
 MAX_MAPSIZE_Y = 20
 MAX_MAPSIZE_X = 20
 MIN_MAPSIZE_Y=5
@@ -338,7 +331,6 @@ class Algorithm():
                     print("-" * 50)
 
     def accept(self):
-
         self.robotsNumber = self.sizeSelectDialog.robotsNumber.value()
         self.pucksNumber = self.sizeSelectDialog.pucksNumber.value()
         self.mapSizeX = self.sizeSelectDialog.mapSizeX.value()
@@ -351,9 +343,6 @@ class Algorithm():
         else:
             print("Error, incorrect values")
             self.showError("incorrect values")
-
-
-
 
     def showError(self, errorMsg):
         msg = QMessageBox()
